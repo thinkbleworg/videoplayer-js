@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Video Player JS</title>
     <link href="https://fonts.googleapis.com/css?family=Open+Sans|Roboto" rel="stylesheet">
+    <link rel="icon" href="data:,">
     <style>
         html,body{
             margin: 0;
@@ -70,41 +71,83 @@
           muted: false
         };
         options.src = [
+          // {
+          //   id: '1',
+          //   url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video1.mp4',
+          //   type: 'video/mp4',
+          //   poster: null,
+          //   info: {
+          //     title: 'Vernier Caliper',
+          //     titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video1.mp4',
+          //     titleLinkTarget: '_blank',
+          //   },
+          //   tracks: []
+          // },
+          // {
+          //   id: '2',
+          //   url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video2.mp4',
+          //   type: 'video/mp4',
+          //   poster: null,
+          //   info: {
+          //     title: 'Screw Gauge',
+          //     titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video2.mp4',
+          //     titleLinkTarget: '_blank',
+          //   },
+          //   tracks: []
+          // },
+          // {
+          //   id: '3',
+          //   url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video3.mp4',
+          //   type: 'video/mp4',
+          //   poster: 'https://i.ytimg.com/vi/4YQZxm8jql0/hqdefault.jpg?sqp=-oaymwEZCNACELwBSFXyq4qpAwsIARUAAIhCGAFwAQ==&rs=AOn4CLBSztal6XTUliFHKqJUZ1kaqufgHg',
+          //   info: {
+          //     title: 'Verification of Law of Forces',
+          //     titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video3.mp4',
+          //     titleLinkTarget: '_blank',
+          //   },
+          //   tracks: []
+          // },
           {
-            id: '1',
-            url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video1.mp4',
+            id: '4',
+            url: 'http://media.w3.org/2010/05/sintel/trailer.mp4',
             type: 'video/mp4',
-            poster: null,
+            poster: 'http://media.w3.org/2010/05/sintel/poster.png',
             info: {
-              title: 'Vernier Caliper',
-              titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video1.mp4',
+              title: 'Sample Video',
+              titleExternalLink: 'http://brenopolanski.com/html5-video-webvtt-example/MIB2.mp4',
               titleLinkTarget: '_blank',
-            },
-            tracks: []
+            }
           },
           {
-            id: '2',
-            url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video2.mp4',
+            id: '5',
+            url: 'http://brenopolanski.com/html5-video-webvtt-example/MIB2.mp4',
             type: 'video/mp4',
-            poster: null,
             info: {
-              title: 'Screw Gauge',
-              titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video2.mp4',
+              title: 'Sample Video 2',
+              titleExternalLink: 'http://brenopolanski.com/html5-video-webvtt-example/MIB2.mp4',
               titleLinkTarget: '_blank',
             },
-            tracks: []
+            tracks: [
+              {
+                src: 'http://brenopolanski.com/html5-video-webvtt-example/MIB2-subtitles-pt-BR.vtt',
+                lang: 'en',
+                label: 'English',
+                kind: 'subtitles',
+                default: true,
+                mode: 'hidden'
+              }
+            ]
           },
           {
-            id: '3',
-            url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video3.mp4',
+            id: '6',
+            url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
             type: 'video/mp4',
             info: {
-              title: 'Verification of Law of Forces',
-              titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video3.mp4',
+              title: 'Tears of Steel',
+              titleExternalLink: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
               titleLinkTarget: '_blank',
-            },
-            tracks: []
-          }
+            }
+          },
         ];
         let vplayer = new Vplayer(el, options);
 

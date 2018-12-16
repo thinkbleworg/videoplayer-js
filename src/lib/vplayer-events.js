@@ -1,35 +1,13 @@
 import './range';
+import ui from './vplayer-ui';
 
-const videoData = {
-  video: null,
-  wrapper: null,
-  config: null
-};
+let videoData = null;
+
+const setNonPlayingState = () => {
+  return videoData.videoList.forEach((item) => { item.state = 'not-playing'; });
+}
 
 const view = {
-  toggleControlsViewEvents() {
-    let bottomLayer = videoData.wrapper.querySelector('.vplayer-bottom-layer')
-    videoData.video.addEventListener('mouseover', () => {
-      this.toggleInfoLayers(videoData.wrapper, true);
-    }, false);
-
-    bottomLayer.addEventListener('mouseover', () => {
-      this.toggleInfoLayers(videoData.wrapper, true);
-    }, false);
-
-    videoData.video.addEventListener('mouseout', () => {
-      if (!videoData.wrapper.classList.contains('video-paused')) {
-        this.toggleInfoLayers(videoData.wrapper, false);
-      }
-    }, false);
-
-    bottomLayer.addEventListener('mouseout', () => {
-      if (!videoData.wrapper.classList.contains('video-paused')) {
-        this.toggleInfoLayers(videoData.wrapper, false);
-      }
-    }, false);
-  },
-
   toggleInfoLayers(wrapper, show) {
     if (show) {
       wrapper.classList.add('show-info-controls');
@@ -50,46 +28,13 @@ const playPausebtnControls = {
     this.videoBottomGradient = videoData.wrapper.querySelector('.vplayer-gradient-bottom');
     this.videoTopLayer = videoData.wrapper.querySelector('.vplayer-top-layer');
     this.videoTopGradient = videoData.wrapper.querySelector('.vplayer-gradient-top');
-
-    videoData.video.addEventListener('click', () => { this.togglePlayPause(); }, false);
-    this.playBtn.addEventListener('click', () => { this.togglePlayPause(); }, false);
-
-    // When the play button is pressed,
-    // switch to the "Pause" symbol.
-    // Toggle play to pause
-    videoData.video.addEventListener('play', () => {
-      this.playBtnUIHandler('pause');
-      videoData.wrapper.classList.remove('video-paused');
-      progressBarControls.startTrackPlayProgress();
-    }, false);
-
-    // Toggle pause to play
-    videoData.video.addEventListener('pause', () => {
-      this.playBtnUIHandler('play');
-      videoData.wrapper.classList.add('video-paused');
-      view.toggleInfoLayers(videoData.wrapper, true);
-      progressBarControls.stopTrackPlayProgress();
-    }, false);
-
-    // When the video has concluded, reload button is enabled.
-    // Reload button enable
-    videoData.video.addEventListener('ended', () => {
-      this.playBtnUIHandler('reload');
-      view.toggleInfoLayers(videoData.wrapper, true);
-    }, false);
-
-    videoData.wrapper.addEventListener('click', (e) => {
-      if (e.target === this.videoBottomGradient || e.target === this.videoTopLayer || e.target === this.videoTopGradient) {
-        this.togglePlayPause();
-      }
-    }, false);
   },
 
   /**
    * togglePlayPause - Toggle between video Play and Pause
    */
   togglePlayPause() {
-    if ( videoData.video.paused || videoData.video.ended ) {
+    if ( videoData.videoEl.paused || videoData.videoEl.ended ) {
       this.playVideo();
     } else {
       this.pauseVideo();
@@ -105,14 +50,14 @@ const playPausebtnControls = {
    */
   playVideo(autoPlay) {
     if (autoPlay) {
-      videoData.video.muted = true;
-      videoData.video.play();
+      videoData.videoEl.muted = true;
+      videoData.videoEl.play();
       // TODO: Unmute the video after playing
     } else {
-      if ( videoData.video.ended ) {
-        videoData.video.currentTime = 0;
+      if ( videoData.videoEl.ended ) {
+        videoData.videoEl.currentTime = 0;
       }
-      videoData.video.play();
+      videoData.videoEl.play();
     }
     this.playBtnUIHandler('pause');
   },
@@ -122,7 +67,7 @@ const playPausebtnControls = {
    * Change the Pause btn to Play btn
    */
   pauseVideo() {
-    videoData.video.pause();
+    videoData.videoEl.pause();
     this.playBtnUIHandler('play');
   },
 
@@ -151,6 +96,81 @@ const playPausebtnControls = {
   }
 };
 
+const prevNextbtnControls = {
+  prevBtn: null,
+  nextBtn: null,
+  previewWrapper: null,
+  currentVideoIndex: null,
+
+  init() {
+    this.prevBtn = videoData.wrapper.querySelector('.vplayer-btn--prev');
+    this.nextBtn = videoData.wrapper.querySelector('.vplayer-btn--next');
+    this.previewWrapper = videoData.wrapper.querySelector('.vplayer-tooltip-wrapper');
+
+    this.currentVideoIndex = videoData.videoList.findIndex((item) => { return item.state === 'playing'; });
+  },
+
+  getNextVideoData() {
+    let nextVideoIndex = this.currentVideoIndex + 1;
+    let nextVideo = videoData.videoList[nextVideoIndex];
+
+    return nextVideo;
+  },
+
+  getPrevVideoData() {
+    let prevVideoIndex = this.currentVideoIndex - 1;
+    let prevVideo = videoData.videoList[prevVideoIndex];
+
+    return prevVideo;
+  },
+
+  playPrevVideo() {
+    setNonPlayingState();
+    videoData.currentVideo = this.getPrevVideoData();
+    videoData.currentVideo.state = 'playing';
+
+    events.addVideoData();
+  },
+
+  playNextVideo() {
+    setNonPlayingState();
+    videoData.currentVideo = this.getNextVideoData();
+    videoData.currentVideo.state = 'playing';
+
+    events.addVideoData();
+  },
+
+  previewVideo(type) {
+    if (type === 'next') {
+      let nextVideo = this.getNextVideoData();
+
+      let opt = {
+        eventType: 'next',
+        bgImage: nextVideo.poster,
+        videoTitle: nextVideo.info.title,
+        videoPageType: 'Next'
+      };
+      toolTipControls.setPreview(opt);
+    } else if (type === 'prev') {
+      let prevVideo = this.getPrevVideoData();
+
+      let opt = {
+        eventType: 'prev',
+        bgImage: prevVideo.poster,
+        videoTitle: prevVideo.info.title,
+        videoPageType: 'Prev'
+      };
+      toolTipControls.setPreview(opt);
+    } else if (type === 'timeline') {
+
+    }
+  },
+
+  closePreview() {
+    toolTipControls.reset();
+  }
+}
+
 const fullScreenControls = {
   isVideoFullScreen: false,
   fullScreenBtn: null,
@@ -163,21 +183,6 @@ const fullScreenControls = {
     this.videoBottomGradient = videoData.wrapper.querySelector('.vplayer-gradient-bottom');
     this.videoTopLayer = videoData.wrapper.querySelector('.vplayer-top-layer');
     this.videoTopGradient = videoData.wrapper.querySelector('.vplayer-gradient-top');
-
-    videoData.video.addEventListener('dblclick', (e) => {
-      this.fullScreenClickHandler();
-    }, false);
-
-    // When the full screen button is pressed...
-    this.fullScreenBtn.addEventListener("click", (e) => {
-      this.fullScreenClickHandler();
-    }, true);
-
-    videoData.wrapper.addEventListener('dblclick', (e) => {
-      if (e.target === this.videoBottomGradient || e.target === this.videoTopLayer || e.target === this.videoTopGradient) {
-        this.fullScreenClickHandler();
-      }
-    }, false);
   },
 
   /**
@@ -233,12 +238,14 @@ const progressBarControls = {
   progressContainer: null,
   playProgressBar: null,
   scrubberContainer: null,
+  scrubbingMouseDownEvent: null,
 
   init() {
     this.progressHolder = videoData.wrapper.querySelector(".vplayer-progress-bar");
-    this.progressContainer = videoData.wrapper.querySelector('.vplayer-progress-bar-container');
-    this.playProgressBar = videoData.wrapper.querySelector(".vplayer-play-progress");
-    this.scrubberContainer = videoData.wrapper.querySelector(".vplayer-scrubber-container");
+    this.progressContainer = this.progressHolder.querySelector('.vplayer-progress-bar-container');
+    this.playProgressBar = this.progressHolder.querySelector(".vplayer-play-progress");
+    this.scrubberContainer = this.progressHolder.querySelector(".vplayer-scrubber-container");
+    this.loadProgressBar = this.progressHolder.querySelector('.vplayer-load-progress');
 
     this.videoScrubbing();
   },
@@ -256,15 +263,15 @@ const progressBarControls = {
   },
 
   updatePlayProgress() {
-    let playerPos = ((videoData.video.currentTime / videoData.video.duration) * (this.progressHolder.offsetWidth));
+    let playerPos = ((videoData.videoEl.currentTime / videoData.videoEl.duration) * (this.progressHolder.offsetWidth));
     this.playProgressBar.style.width = playerPos + "px";
     this.scrubberContainer.style.transform = 'translateX(' + (playerPos) + 'px)';
   },
 
   videoScrubbing() {
-    this.progressHolder.addEventListener("mousedown", () => {
+    this.progressHolder.addEventListener("mousedown", this.scrubbingMouseDownEvent = () => {
       this.stopTrackPlayProgress();
-      playPausebtnControls.togglePlayPause();
+      // playPausebtnControls.togglePlayPause();
 
       document.onmousemove = (e) => {
         this.setPlayProgress(e.pageX);
@@ -274,29 +281,52 @@ const progressBarControls = {
         document.onmouseup = null;
         document.onmousemove = null;
 
-        videoData.video.play();
+        // videoData.videoEl.play();
         this.setPlayProgress(e.pageX);
         this.startTrackPlayProgress();
       }
     }, true);
   },
 
-  setPlayProgress: function(clickX) {
+  setPlayProgress(clickX) {
     var newVal = Math.max(0, Math.min(1, (clickX - this.findPosX(this.progressHolder)) / this.progressHolder.offsetWidth));
-    videoData.video.currentTime = newVal * videoData.video.duration;
+    videoData.videoEl.currentTime = newVal * videoData.videoEl.duration;
     this.playProgressBar.style.width = newVal * (this.progressHolder.offsetWidth)  + "px";
   },
 
-  findPosX: function(progressHolder) {
+  findPosX(progressHolder) {
     var curleft = progressHolder.offsetLeft;
     while (progressHolder = progressHolder.offsetParent) {
       curleft += progressHolder.offsetLeft;
     }
     return curleft;
+  },
+
+  loadProgress() {
+    let range = 0;
+    let bf = videoData.videoEl.buffered;
+    let time = videoData.videoEl.currentTime;
+    let duration = videoData.videoEl.duration;
+
+    while(!(bf.start(range) <= time && time <= bf.end(range))) {
+      range += 1;
+    }
+    let loadStartPercentage = bf.start(range) / duration;
+    let loadEndPercentage = bf.end(range) / duration;
+    let loadPercentage = parseFloat((loadEndPercentage - loadStartPercentage).toFixed(2)) * 100;
+
+    let loadProgress = this.loadProgressBar || videoData.wrapper.querySelector('.vplayer-load-progress');
+    loadProgress.style.width = `${loadPercentage}%`;
+  },
+
+  destroy() {
+    this.progressHolder.removeEventListener("mousedown", this.scrubbingMouseDownEvent);
+    this.scrubbingMouseDownEvent = null;
   }
 };
 
 const volumeControls = {
+  volumeBtnParent: null,
   volumeBtn: null,
   controlsElem: null,
   volumePanel: null,
@@ -308,18 +338,6 @@ const volumeControls = {
     this.volumeBtn = videoData.wrapper.querySelector('.vplayer-btn--volume').parentNode;
     this.controlsElem = videoData.wrapper.querySelector('.vplayer-controls');
     this.volumePanel = videoData.wrapper.querySelector('.vplayer-volume-panel');
-
-    this.volumeBtn.addEventListener('mouseover', () => {
-      this.volumeHoverEffects(true);
-    }, false);
-
-    this.volumeBtn.addEventListener('mouseout', () => {
-      this.volumeHoverEffects(false);
-    }, false);
-
-    this.volumeBtn.addEventListener('click', () => {
-      this.toggleMuted();
-    }, false);
 
     this.initializeVolumeSlider();
   },
@@ -344,8 +362,8 @@ const volumeControls = {
    */
   toggleMuted() {
     this.isMuted = !this.isMuted;
-    videoData.video.muted = this.isMuted;
-    let vol = this.isMuted ? 0 : videoData.video.volume * 100;
+    videoData.videoEl.muted = this.isMuted;
+    let vol = this.isMuted ? 0 : videoData.videoEl.volume * 100;
     let volSliderDrag = this.volumeBtn.querySelector('.vplayer-volume-slider-handle');
     if (this.isMuted) {
       this.volumeSliderObj = {
@@ -363,7 +381,12 @@ const volumeControls = {
    */
   initializeVolumeSlider() {
     var sliderPanel = this.controlsElem.querySelector('.vplayer-volume-panel'),
-        sliderRangeInput = sliderPanel.querySelector('#volumeRangeSlider');
+        sliderRangeInput = sliderPanel.querySelector('#volumeRangeSlider'),
+        slider = sliderPanel.querySelector('.vplayer-volume-slider')
+
+    if (slider !== null) {
+      slider.parentNode.removeChild(slider);
+    }
 
     rangejs(sliderRangeInput, {
       css: true,
@@ -375,6 +398,7 @@ const volumeControls = {
       wrapper: sliderPanel,
       callbackFn: (volume) => { this.setVolume(volume); }
     });
+
   },
 
   /**
@@ -382,14 +406,16 @@ const volumeControls = {
    * @param  {float} volume - holds the volume to be set
    */
   setVolume(volume) {
+    console.log('setVolume');
+
     this.volume = volume/100;
     if (this.volume == 0) {
       this.isMuted = true;
     } else {
       this.isMuted = false;
     }
-    videoData.video.volume = this.volume;
-    videoData.video.muted = this.isMuted;
+    videoData.videoEl.volume = this.volume;
+    videoData.videoEl.muted = this.isMuted;
     this.volumeBtnHandler(volume);
   },
 
@@ -404,10 +430,10 @@ const volumeControls = {
     svg.parentNode.removeChild(svg);
 
     if (volume == 0) {
-      svgVolumeBtn.setAttribute('title', 'UnMute');
+      svgVolumeBtn.setAttribute('title', 'UnMute (M)');
       svgVolumeBtn.innerHTML = svgMuted;
     } else {
-      svgVolumeBtn.setAttribute('title', 'Mute');
+      svgVolumeBtn.setAttribute('title', 'Mute (M)');
       if (volume > 50) {
         svgVolumeBtn.innerHTML = svgFullVolume;
       } else {
@@ -426,25 +452,20 @@ const timerInfo = {
     this.timeDisplay = videoData.wrapper.querySelector('.vplayer-time-display');
     this.currentTimeEl = videoData.wrapper.querySelector('.vplayer-time-current');
     this.durationEl = videoData.wrapper.querySelector('.vplayer-time-duration');
-
-    videoData.video.addEventListener('timeupdate', () => {
-      this.updateTime();
-    }, false);
-
     this.updateVideoDuration();
   },
 
   updateTime() {
-    let currentMin = parseInt(videoData.video.currentTime / 60, 10);
-    let currentSec = parseInt(videoData.video.currentTime % 60, 10);
+    let currentMin = parseInt(videoData.videoEl.currentTime / 60, 10);
+    let currentSec = parseInt(videoData.videoEl.currentTime % 60, 10);
 
     currentSec = currentSec < 10 ? ('0' + currentSec) : currentSec;
     this.currentTimeEl.innerHTML = currentMin + ':' + currentSec;
   },
 
-  updateVideoDuration: function() {
-    let durationMin = parseInt(videoData.video.duration / 60, 10);
-    let durationSec = parseInt(videoData.video.duration % 60, 10);
+  updateVideoDuration() {
+    let durationMin = parseInt(videoData.videoEl.duration / 60, 10);
+    let durationSec = parseInt(videoData.videoEl.duration % 60, 10);
 
     durationSec = durationSec < 10 ? ('0' + durationSec) : durationSec;
     this.durationEl.innerHTML = durationMin + ':' + durationSec;
@@ -459,6 +480,7 @@ const customTracksControls = {
   mode: null,
   captionBlock: null,
   captionWindow: null,
+  cueChangeEvents: null,
 
   init() {
     this.captionBtn = videoData.wrapper.querySelector('.vplayer-btn--subtitles');
@@ -470,19 +492,27 @@ const customTracksControls = {
     this.captionBtn.setAttribute('aria-pressed', this.isCaptionEnabled);
 
     if (this.trackEl) {
-      videoData.video.textTracks.forEach((textTrack) => {
+      this.toggleCaptionBtnState(false);
+
+      videoData.videoEl.textTracks.forEach((textTrack) => {
         textTrack.mode = 'hidden';
       });
 
       if (this.isCaptionEnabled) {
-        this.createTracks(true);
+        this.createTracks();
       } else {
         this.removeTracks();
       }
+    } else {
+      this.destroy();
+    }
+  },
 
-      this.captionBtn.addEventListener('click', () => {
-        this.toggleCaptioning();
-      }, false);
+  toggleCaptionBtnState(disable) {
+    if (disable) {
+      this.captionBtn.classList.add('vplayer-btn--disabled')
+    } else {
+      this.captionBtn.classList.remove('vplayer-btn--disabled');
     }
   },
 
@@ -497,13 +527,14 @@ const customTracksControls = {
     }
   },
 
-  createTracks(createEvent) {
-    let currentTrack = videoData.video.parentNode.querySelector('track.vplayer-track--default');
-    currentTrack.track.mode = 'hidden';
+  createTracks() {
+    let currentTrack = videoData.videoEl.parentNode.querySelector('track.vplayer-track--default');
 
-    if (createEvent) {
+    if (currentTrack !== null) {
+      currentTrack.track.mode = 'hidden';
+
       if (currentTrack.track.oncuechange !== undefined) {
-        currentTrack.track.addEventListener('cuechange', (e) => {
+        currentTrack.track.addEventListener('cuechange', this.cueChangeEvents = (e) => {
           console.log('cuechange',e);
           e.preventDefault();
           this.showCustomTracks(true, this.trackEl);
@@ -515,12 +546,13 @@ const customTracksControls = {
   },
 
   removeTracks() {
-    let currentTrack = videoData.video.parentNode.querySelector('track.vplayer-track--default');
-    this.showCustomTracks(false);
+    let currentTrack = videoData.videoEl.parentNode.querySelector('track.vplayer-track--default');
 
-    currentTrack.track.mode = 'disabled';
+    if (currentTrack !== null) {
+      this.showCustomTracks(false);
 
-
+      currentTrack.track.mode = 'disabled';
+    }
   },
 
   showCustomTracks(isShow, el) {
@@ -534,6 +566,24 @@ const customTracksControls = {
     } else {
       this.captionBlock.innerHTML = '';
     }
+  },
+
+  destroy () {
+    // disable the CC btn
+    this.toggleCaptionBtnState(true);
+
+    let currentTrack = videoData.videoEl.parentNode.querySelector('track.vplayer-track');
+
+    if (currentTrack && currentTrack.track) {
+      currentTrack.track.removeEventListener('cuechange', this.cueChangeEvents, false);
+      currentTrack.parentNode.removeChild(currentTrack);
+    }
+
+    this.allTrackEl.forEach((item) => {
+      item.parentNode.removeChild(item);
+    });
+
+    this.showCustomTracks(false);
   }
 };
 
@@ -542,10 +592,6 @@ const settingsControls = {
 
   init() {
     this.settingsBtn = videoData.wrapper.querySelector('.vplayer-btn--settings');
-
-    this.settingsBtn.addEventListener('click', (e) => {
-      this.animateSettingsBtn();
-    });
   },
 
   animateSettingsBtn() {
@@ -555,14 +601,15 @@ const settingsControls = {
     } else {
       this.settingsBtn.setAttribute('aria-expanded', true);
     }
-  }
+  },
 }
 
 const keyboardEvents = {
   init() {
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', this.keyEvents = (e) => {
       this.onKeyPress(event, 32, playPausebtnControls, 'togglePlayPause');
       this.onKeyPress(event, 27, fullScreenControls, 'toggleFullScreen', false);
+      this.onKeyPress(event, 77, volumeControls, 'toggleMuted', false);
     }, false);
   },
 
@@ -580,49 +627,296 @@ const keyboardEvents = {
       ref[callbackFn](callbackArgs);
     }
   },
+
+  destroy() {
+    document.removeEventListener('keydown', this.keyEvents);
+    this.keyEvents = null;
+  }
+};
+
+const toolTipControls = {
+  toolTipWrapper: null,
+  toolTipBgImageEl: null,
+  toolTipInfoEl: null,
+  toolTipBgDuration: null,
+  toolTipInfoText: null,
+  toolTipInfoTitle: null,
+
+  init() {
+    this.toolTipWrapper = videoData.wrapper.querySelector('.vplayer-tooltip-wrapper');
+    this.toolTipBgImageEl = this.toolTipWrapper.querySelector('.vplayer-tooltip-bg-image');
+    this.toolTipInfoEl = this.toolTipWrapper.querySelector('.vplayer-tooltip-info-wrapper');
+    this.toolTipBgDuration = this.toolTipBgImageEl.querySelector('.vplayer-tooltip-bg-duration');
+    this.toolTipInfoText = this.toolTipInfoEl.querySelector('.vplayer-tooltip-info-text');
+    this.toolTipInfoTitle = this.toolTipInfoEl.querySelector('.vplayer-tooltip-info-title');
+  },
+
+  positionToolTip(eventType) {
+    if (eventType === 'next' || eventType === 'prev') {
+      let control = videoData.wrapper.querySelector('.vplayer-bottom-layer');
+      let controlBoundaries = control.getBoundingClientRect();
+
+      let toolTipBoundaries = {
+        width: this.toolTipWrapper.offsetWidth,
+        height: this.toolTipWrapper.offsetHeight
+      };
+
+      let wrapperBoundaries = videoData.wrapper.getBoundingClientRect();
+
+      let left = controlBoundaries.left;
+      let top = wrapperBoundaries.height - controlBoundaries.height - toolTipBoundaries.height;
+
+      let style = `left: ${left}px; top: ${top}px`;
+
+      this.toolTipWrapper.setAttribute('style', style);
+    }
+  },
+
+  setPreview(opt) {
+    let previewW = 160,
+      previewH = 90;
+
+    if (opt.bgImage) {
+      let styleObj = {
+        'background-image': `url(${opt.bgImage})`,
+        'background-position': '0px 0px',
+        'background-size': '160px 90px'
+      };
+      let style = '';
+      styleObj.forEach((attr, key) => {
+        style += `${key}:${attr};`;
+      });
+      style += `width: ${previewW}px; height: ${previewH}px;`;
+      this.toolTipBgImageEl.setAttribute('style', style);
+      this.toolTipWrapper.classList.add('vplayer-tooltip-wrapper--preview');
+    }
+
+    if (opt.videoDuration) {
+      this.toolTipBgDuration.innerText = opt.videoDuration;
+      this.toolTipWrapper.classList.add('vplayer-tooltip-has-duration');
+    }
+
+    if (opt.videoTitle) {
+      this.toolTipInfoText.innerText = opt.videoTitle;
+      this.toolTipWrapper.classList.add('vplayer-tooltip-text');
+    }
+
+    if (opt.videoPageType) {
+      this.toolTipInfoTitle.innerText = opt.videoPageType;
+    }
+
+    this.positionToolTip(opt.eventType);
+    this.toolTipWrapper.setAttribute('aria-hidden', false);
+  },
+
+  reset() {
+    this.toolTipWrapper.classList.remove('vplayer-tooltip-wrapper--preview');
+    this.toolTipWrapper.classList.remove('vplayer-tooltip-text');
+    this.toolTipWrapper.classList.remove('vplayer-tooltip-has-duration');
+    this.toolTipBgImageEl.removeAttribute('style');
+    this.toolTipBgDuration.innerText = '';
+    this.toolTipInfoText.innerText = '';
+    this.toolTipInfoTitle.innerText = '';
+
+    this.toolTipWrapper.setAttribute('aria-hidden', true);
+  }
 };
 
 const events = {
-  init(wrapper, video, config) {
-    videoData.wrapper = wrapper;
-    videoData.video = video;
-    videoData.config = config;
+  init(eventsObj) {
+    videoData = eventsObj;
+    this.addVideoData();
+    this.initVideoBeforeLoadEvents();
+  },
 
+  addVideoData() {
+    if (videoData.currentVideo) {
+      ui.addVideoAttrs(videoData.currentVideo, videoData.videoEl);
+      ui.setPrevNextBtnStates(videoData.videoList);
+    }
+  },
+
+  initVideoBeforeLoadEvents() {
+    let video = videoData.videoEl;
     if (video) {
-      video.addEventListener('loadeddata', () => {
-        if (video.readyState >= 2) {
-          console.log('video ready');
-          this.initControls();
-        }
-      }, false);
-
-      video.addEventListener('loadedmetadata', () => {
-        customTracksControls.init();
-      }, false);
+      let events = ['loadeddata', 'loadedmetadata'];
+      events.forEach(evt => video.addEventListener(evt, this, false));
     }
   },
 
   initControls() {
-    view.toggleControlsViewEvents();
     playPausebtnControls.init();
+    prevNextbtnControls.init();
     fullScreenControls.init();
     volumeControls.init();
     progressBarControls.init();
     timerInfo.init();
     settingsControls.init();
     keyboardEvents.init();
+    toolTipControls.init();
 
     if (videoData.config.autoPlay) {
       playPausebtnControls.playVideo(true)
     } else {
       playPausebtnControls.playBtnUIHandler('play');
     }
+
+    this.initVideoAfterLoadEvents();
+  },
+
+  initVideoAfterLoadEvents() {
+    let videoElementEvents = ['play', 'pause', 'ended', 'timeupdate', 'progress'];
+    videoElementEvents.forEach(evt => videoData.videoEl.addEventListener(evt, this, false));
+
+    let wrapperEvents = ['click', 'mouseover', 'mouseout', 'dblclick'];
+    wrapperEvents.forEach(evt => videoData.wrapper.addEventListener(evt, this, false));
+  },
+
+  handleEvent(evt) {
+    let handler = `on${evt.type}Event`;
+    if (typeof this[handler] === "function") {
+      evt.preventDefault();
+      return this[handler](evt);
+    }
+  },
+
+  onloadeddataEvent(event) {
+    let video = event.target;
+    if (video.readyState >= 2) {
+      console.log('onloadeddataEvent video ready');
+      events.initControls();
+    }
+  },
+
+  onloadedmetadataEvent() {
+    console.log('onloadedmetadataEvent');
+    customTracksControls.init();
+  },
+
+  onmouseoverEvent(event) {
+    let target = event.target;
+
+    if (target === prevNextbtnControls.nextBtn) {
+      if (!target.classList.contains('vplayer-btn--disabled')) {
+        prevNextbtnControls.previewVideo('next');
+      }
+    } else if (target === prevNextbtnControls.prevBtn) {
+      if (!target.classList.contains('vplayer-btn--disabled')) {
+        prevNextbtnControls.previewVideo('prev');
+      }
+    } else if (target.closest('.vplayer-volume-btn-wrapper') !== null) {
+      volumeControls.volumeHoverEffects(true);
+    }
+
+    if (target === videoData.videoEl || target.closest('.vplayer-bottom-layer') !== null || target.closest('.vplayer-wrapper') !== null || target === videoData.wrapper) {
+      view.toggleInfoLayers(videoData.wrapper, true);
+    }
+  },
+
+  onmouseoutEvent(event) {
+    let target = event.target;
+
+    if (target === prevNextbtnControls.nextBtn) {
+      prevNextbtnControls.closePreview();
+    } else if (target === prevNextbtnControls.prevBtn) {
+      prevNextbtnControls.closePreview();
+    } else if (target.closest('.vplayer-volume-btn-wrapper') !== null) {
+      volumeControls.volumeHoverEffects(false);
+    }
+
+    if (target === videoData.videoEl || target.closest('.vplayer-bottom-layer') !== null || target.closest('.vplayer-wrapper') !== null || target === videoData.wrapper) {
+      if (!videoData.wrapper.classList.contains('video-paused')) {
+        view.toggleInfoLayers(videoData.wrapper, false);
+      }
+    }
+  },
+
+  onclickEvent(event) {
+    let target = event.target;
+    console.log('on click event', target);
+    debugger;
+    if (target === prevNextbtnControls.nextBtn) {
+      prevNextbtnControls.playNextVideo();
+    } else if (target === prevNextbtnControls.prevBtn) {
+      prevNextbtnControls.playPrevVideo();
+    } else if (target === fullScreenControls.fullScreenBtn) {
+      fullScreenControls.fullScreenClickHandler();
+    } else if (target.closest('.vplayer-volume-btn-wrapper') !== null) {
+      volumeControls.toggleMuted();
+    } else if ((target === customTracksControls.captionBtn) && customTracksControls.trackEl) {
+      customTracksControls.toggleCaptioning();
+    } else if (target === settingsControls.settingsBtn) {
+      settingsControls.animateSettingsBtn();
+    } else if (target.closest('.vplayer-progress-bar-wrapper') === null) {
+      // Target should not be in scrubber and controls
+      if (target.closest('.vplayer-bottom-layer') !== null || target.closest('.vplayer-gradient-bottom') !== null || target.closest('.vplayer-top-layer') !== null || target.closest('.vplayer-gradient-top') !== null ||
+      target.closest('.vplayer-container') !== null || target === playPausebtnControls.playBtn) {
+          playPausebtnControls.togglePlayPause();
+      }
+    }
+  },
+
+  onplayEvent(event) {
+    let target = event.target;
+
+    console.log('on play event of videoEl', target);
+    playPausebtnControls.playBtnUIHandler('pause');
+    videoData.wrapper.classList.remove('video-paused');
+    progressBarControls.startTrackPlayProgress();
+  },
+
+  onpauseEvent(event) {
+    let target = event.target;
+    
+    playPausebtnControls.playBtnUIHandler('play');
+    videoData.wrapper.classList.add('video-paused');
+    view.toggleInfoLayers(videoData.wrapper, true);
+    progressBarControls.stopTrackPlayProgress();
+  },
+
+  onendedEvent(event) {
+    let target = event.target;
+
+    console.log('on ended event of videoEl', target);
+
+    playPausebtnControls.playBtnUIHandler('reload');
+    view.toggleInfoLayers(videoData.wrapper, true);
+
+    if (videoData.config.autoPlay) {
+      // Play Next Video
+      prevNextbtnControls.playNextVideo();
+    }
+  },
+
+  ondblclickEvent(event) {
+    let target = event.target;
+    console.log('on double click event', target);
+
+    if (target === fullScreenControls.videoBottomGradient || target === fullScreenControls.videoTopLayer || target === fullScreenControls.videoTopGradient) {
+      fullScreenControls.fullScreenClickHandler();
+    } else if (target === videoData.videoEl || target === videoData.videoWrapper) {
+      fullScreenControls.fullScreenClickHandler();
+    }
+  },
+
+  ontimeupdateEvent(event) {
+    let target = event.target;
+    timerInfo.updateTime();
+  },
+
+  onprogressEvent(event) {
+    let target = event.target;
+    progressBarControls.loadProgress();
   },
 
   destroy() {
-    videoData.video = null;
+    progressBarControls.destroy();
+    keyboardEvents.destroy();
+    customTracksControls.destroy();
+
+    videoData.videoEl = null;
     videoData.wrapper = null;
-  },
+  }
 }
 
 export default events;

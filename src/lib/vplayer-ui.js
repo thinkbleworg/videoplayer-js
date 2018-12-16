@@ -34,6 +34,18 @@ function _createElements(opt, elToAppend) {
   return el;
 }
 
+function _removeDOMElement(className, wrapperEl, removeAllMatching) {
+  if (removeAllMatching) {
+    let elems = wrapperEl.querySelectorAll(`.${className}`);
+    elems.forEach((el) => {
+      el.parentNode.removeChild(el);
+    })
+  } else {
+    let elem = wrapperEl.querySelector(`.${className}`);
+    elem.parentNode.removeChild(elem);
+  }
+}
+
 
 /**
  * _buildVideoElOptions - build the video layer
@@ -56,38 +68,6 @@ function _buildVideoElOptions(config) {
       crossorigin: config.crossorigin || 'anonymous',
     }
   };
-
-  if (Array.isArray(config.src) && config.src.length) {
-    // Src is present for video
-    // Showing src[0] as default
-    let defaultSrc = config.src[0];
-
-    videoList = config.src;
-
-    videoElOpt.attrs.src = defaultSrc.url;
-    videoElOpt.attrs.type = defaultSrc.type;
-
-    if (defaultSrc.poster && defaultSrc.poster !== null) {
-      videoElOpt.attrs.poster = defaultSrc.poster;
-    }
-
-    // If any track is present && enableCaptions is true, show captions
-    if (Array.isArray(defaultSrc.tracks) && defaultSrc.tracks.length) {
-      //TODO: Store the track in global obj and init the respective events
-      tracks = defaultSrc.tracks;
-    }
-
-    //Store the title of current video in object
-    if (defaultSrc.info) {
-      titleObj = {
-        title: defaultSrc.info.title,
-        content: defaultSrc.info.title,
-        link: defaultSrc.info.titleExternalLink || '',
-        target: defaultSrc.info.titleLinkTarget || '_blank'
-      }
-    }
-
-  }
 
   if (config.autoPlay) {
     videoElOpt.attrs.autoPlay = '';
@@ -152,14 +132,9 @@ function _buildCustomTracks(wrapperEl) {
  * @return {DOMObj} returns topLayer element
  */
 function _buildTopLayer(wrapperEl, titleObj) {
-  let topLayer = _createElements({classNames: ['vplayer-top-layer', 'show']}, wrapperEl);
+  let topLayer = _createElements({classNames: ['vplayer-top-layer']}, wrapperEl);
   let titleLayer = _createElements({classNames: ['vplayer-title']}, topLayer);
   let text = _createElements({classNames: ['vplayer-title-text']}, titleLayer);
-
-
-
-  let titleLinkElOpt = _buildTitleLayer(titleObj);
-  let titleLink = _createElements(titleLinkElOpt, text);
 
   return topLayer;
 }
@@ -196,7 +171,7 @@ function _buildTitleLayer(titleObj) {
  * @return {DOMObj} returns the bottom layer
  */
 function _buildBottomLayer(wrapperEl) {
-  let bottomLayer = _createElements({classNames: ['vplayer-bottom-layer', 'show']}, wrapperEl);
+  let bottomLayer = _createElements({classNames: ['vplayer-bottom-layer']}, wrapperEl);
 
   let bottomPadder = _createElements({classNames: ['vplayer-bottom-padder']}, bottomLayer);
 
@@ -221,7 +196,7 @@ function _buildBottomLayer(wrapperEl) {
 
   let nextBtnHTML = '<a class="vplayer-btn vplayer-btn--next" title="Next"> <svg height="100%" viewBox="0 0 36 36" width="100%"> <use class="vplayer-svg-shadow" xlink:href=""></use> <path class="vplayer-svg-fill" d="M 12,24 20.5,18 12,12 V 24 z M 22,12 v 12 h 2 V 12 h -2 z"></path> </svg> </a>';
 
-  let volumeBtnHTML = '<span> <button class="vplayer-btn vplayer-btn--volume" title="Mute"> <svg height="100%" viewBox="0 0 36 36" width="100%"> <use class="vplayer-svg-shadow" xlink:href=""></use> <use class="vplayer-svg-shadow" xlink:href=""></use> <defs> <clipPath id="vplayer-svg-volume-animation-mask"> <path d="m 14.35,-0.14 -5.86,5.86 20.73,20.78 5.86,-5.91 z"></path> <path d="M 7.07,6.87 -1.11,15.33 19.61,36.11 27.80,27.60 z"></path> <path class="vplayer-svg-volume-animation-mover" d="M 9.09,5.20 6.47,7.88 26.82,28.77 29.66,25.99 z" transform="translate(0, 0)"></path> </clipPath> <clipPath id="vplayer-svg-volume-animation-slash-mask"> <path class="vplayer-svg-volume-animation-mover" d="m -11.45,-15.55 -4.44,4.51 20.45,20.94 4.55,-4.66 z" transform="translate(0, 0)"></path> </clipPath> </defs> <path class="vplayer-svg-fill vplayer-svg-volume-animation-speaker" clip-path="url(#vplayer-svg-volume-animation-mask)" d="M8,21 L12,21 L17,26 L17,10 L12,15 L8,15 L8,21 Z M19,14 L19,22 C20.48,21.32 21.5,19.77 21.5,18 C21.5,16.26 20.48,14.74 19,14 Z" fill="#fff" id=""></path> <path class="vplayer-svg-fill vplayer-svg-volume-animation-hider" clip-path="url(#vplayer-svg-volume-animation-slash-mask)" d="M 9.25,9 7.98,10.27 24.71,27 l 1.27,-1.27 Z" fill="#fff" id="" style="display: none;"></path> </svg> </button> <div class="vplayer-volume-panel" aria-valuemin="0" aria-valuemax="100" tabindex="0" aria-valuenow="100" aria-valuetext="100% volume"> <input type="hidden" id="volumeRangeSlider" min="0" max="100" step="1"/> </div></span>';
+  let volumeBtnHTML = '<span class="vplayer-volume-btn-wrapper"> <button class="vplayer-btn vplayer-btn--volume" title="Mute (M)"> <svg height="100%" viewBox="0 0 36 36" width="100%"> <use class="vplayer-svg-shadow" xlink:href=""></use> <use class="vplayer-svg-shadow" xlink:href=""></use> <defs> <clipPath id="vplayer-svg-volume-animation-mask"> <path d="m 14.35,-0.14 -5.86,5.86 20.73,20.78 5.86,-5.91 z"></path> <path d="M 7.07,6.87 -1.11,15.33 19.61,36.11 27.80,27.60 z"></path> <path class="vplayer-svg-volume-animation-mover" d="M 9.09,5.20 6.47,7.88 26.82,28.77 29.66,25.99 z" transform="translate(0, 0)"></path> </clipPath> <clipPath id="vplayer-svg-volume-animation-slash-mask"> <path class="vplayer-svg-volume-animation-mover" d="m -11.45,-15.55 -4.44,4.51 20.45,20.94 4.55,-4.66 z" transform="translate(0, 0)"></path> </clipPath> </defs> <path class="vplayer-svg-fill vplayer-svg-volume-animation-speaker" clip-path="url(#vplayer-svg-volume-animation-mask)" d="M8,21 L12,21 L17,26 L17,10 L12,15 L8,15 L8,21 Z M19,14 L19,22 C20.48,21.32 21.5,19.77 21.5,18 C21.5,16.26 20.48,14.74 19,14 Z" fill="#fff" id=""></path> <path class="vplayer-svg-fill vplayer-svg-volume-animation-hider" clip-path="url(#vplayer-svg-volume-animation-slash-mask)" d="M 9.25,9 7.98,10.27 24.71,27 l 1.27,-1.27 Z" fill="#fff" id="" style="display: none;"></path> </svg> </button> <div class="vplayer-volume-panel" aria-valuemin="0" aria-valuemax="100" tabindex="0" aria-valuenow="100" aria-valuetext="100% volume"> <input type="hidden" id="volumeRangeSlider" min="0" max="100" step="1"/> </div></span>';
 
   leftControlsEl.innerHTML = prevBtnHTML + playBtnHTML + nextBtnHTML + volumeBtnHTML;
 
@@ -237,14 +212,32 @@ function _buildBottomLayer(wrapperEl) {
   return bottomLayer;
 }
 
+
+function _buildTooltipLayer(wrapperEl) {
+  let tooltipWrapperElOpt = {
+    classNames: ['vplayer-tooltip-wrapper'],
+    attrs: {
+      'aria-hidden': true
+    }
+  };
+
+  let tooltipWrapperEl = _createElements(tooltipWrapperElOpt, wrapperEl);
+
+  let bgImageTooltipEl = '<div class="vplayer-tooltip-bg-image"> <div class="vplayer-tooltip-bg-duration"></div></div>';
+
+  let infoTooltipEl = ' <div class="vplayer-tooltip-info-wrapper"> <div class="vplayer-tooltip-info-image"></div><div class="vplayer-tooltip-info-title"></div><span class="vplayer-tooltip-info-text"></span> </div>';
+
+  tooltipWrapperEl.innerHTML = bgImageTooltipEl + infoTooltipEl;
+
+  return tooltipWrapperEl;
+}
+
 const ui = {
   config: null,
-  videoList: null,
-  tracks: null,
-  titleObj: null,
 
   init(rootEl, config) {
     this.config = config;
+    this.wrapper = null;
     return this.createUI(rootEl, config);
   },
 
@@ -271,34 +264,115 @@ const ui = {
     let videoEl = _createElements(videoElOpt, container);
     videoEl.removeAttribute('controls');
 
-    this.tracks = tracks;
-    this.videoList = videoList;
-    this.titleObj = titleObj;
+    let customTrackUI = _buildCustomTracks(wrapper);
 
-    if (this.tracks && config.enableCaptions) {
-      this.tracks.forEach((track) => {
-        let trackElOpt = _buildTrackElOptions(track);
-        let trackEl = _createElements(trackElOpt, videoEl);
-      });
-      let customTrackUI = _buildCustomTracks(wrapper);
-    }
+    let tooltipLayer = _buildTooltipLayer(wrapper);
 
-    let topGradient = _createElements({classNames: ['vplayer-gradient-top', 'show']}, wrapper);
+    let topGradient = _createElements({classNames: ['vplayer-gradient-top']}, wrapper);
 
-    let topLayer = _buildTopLayer(wrapper, this.titleObj);
+    // let topLayer = _buildTopLayer(wrapper, this.titleObj);
+    let topLayer = _buildTopLayer(wrapper);
 
-    let bottomGradient = _createElements({classNames: ['vplayer-gradient-bottom', 'show']}, wrapper);
+    let bottomGradient = _createElements({classNames: ['vplayer-gradient-bottom']}, wrapper);
 
     let bottomLayer = _buildBottomLayer(wrapper);
 
     docFrag.appendChild(wrapper);
     rootEl.appendChild(docFrag);
 
+    this.wrapper = wrapper;
+
     return wrapper;
   },
 
-  createSettingsPopup() {
+  removeDOMElements(className, wrapperEl, removeAllMatching) {
+    return _removeDOMElement(className, wrapperEl, removeAllMatching);
+  },
 
+  addVideoAttrs(video, el) {
+    let attrs = {
+      src: video.url,
+      'data-video-id': video.id,
+      type: video.type
+    };
+
+    if (video.poster && video.poster !== null) {
+      attrs.poster = video.poster;
+    } else {
+      attrs.poster = null;
+    }
+
+    attrs.forEach((attr, key) => {
+      el.setAttribute(key, attr);
+    });
+
+    let tracks = null;
+    // If any track is present add captions
+    if (Array.isArray(video.tracks) && video.tracks.length) {
+      tracks = video.tracks;
+
+      if (el.querySelectorAll('.vplayer-track').length > 0) {
+        _removeDOMElement('vplayer-track', el, true);
+      }
+
+      tracks.forEach((track) => {
+        let trackElOpt = _buildTrackElOptions(track);
+        let trackEl = _createElements(trackElOpt, el);
+      });
+    } else {
+      if (el.querySelectorAll('.vplayer-track').length > 0) {
+        _removeDOMElement('vplayer-track', el, true);
+      }
+    }
+
+    let titleObj = null;
+    //Store the title of current video in object
+    if (video.info) {
+      titleObj = {
+        title: video.info.title,
+        content: video.info.title,
+        link: video.info.titleExternalLink || '',
+        target: video.info.titleLinkTarget || '_blank'
+      }
+      let textTopLayer = this.wrapper.querySelector('.vplayer-title-text');
+      textTopLayer.innerHTML = '';
+      let titleLinkElOpt = _buildTitleLayer(titleObj);
+      let titleLink = _createElements(titleLinkElOpt, textTopLayer);
+    }
+  },
+
+  setPrevNextBtnStates(playlist) {
+    let prevBtn = this.wrapper.querySelector('.vplayer-btn--prev');
+    let nextBtn = this.wrapper.querySelector('.vplayer-btn--next');
+
+    let classLists = ['vplayer-btn--disabled', 'vplayer-btn--hide'];
+
+    classLists.forEach((className) => {
+      prevBtn.classList.remove(className);
+      nextBtn.classList.remove(className);
+    });
+
+    if (playlist.length > 1) {
+      let currentVideoIndex = playlist.findIndex((item) => { return item.state === 'playing'; });
+
+      if (currentVideoIndex === 0) {
+        // disable the prev btn
+        classLists.forEach((className) => {
+          prevBtn.classList.add(className);
+        });
+      } else if (currentVideoIndex === playlist.length - 1) {
+        // disable the next btn
+        classLists.forEach((className) => {
+          nextBtn.classList.add(className);
+        });
+      }
+    } else {
+      // Disable next and prev btns as there is only one video
+      classLists.forEach((className) => {
+        prevBtn.classList.add(className);
+        nextBtn.classList.add(className);
+      });
+    }
   }
 };
 

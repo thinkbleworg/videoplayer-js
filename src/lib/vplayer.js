@@ -9,8 +9,10 @@ class Vplayer {
     this.config = Object.assign(defaultConfig, options);
 
     this.videoList = this.config.src;
-    this.videoCount = this.videoList.length;
+    // Set the videolist item to not-playing initially
+    this.videoList.forEach((item) => { item.state = 'not-playing'; });
     this.currentVideo = this.config.src[0];
+    this.currentVideo.state = 'playing';
   }
 
   init() {
@@ -18,17 +20,23 @@ class Vplayer {
     // Construct the UI if no custom ui
     if (!this.config.customUI) {
       // Construct the UI
-      this.wrapper = ui.init(this.rootElem, this.config);
-      this.video = this.wrapper.querySelector('.vplayer-stream');
+      let wrapper = ui.init(this.rootElem, this.config);
+      let videoEl = wrapper.querySelector('.vplayer-stream');
+      let config = this.config;
+      let currentVideo = this.currentVideo;
+      let videoList = this.videoList;
 
-      events.init(this.wrapper, this.video, this.config);
+      let eventsObj = { wrapper, videoEl, config, currentVideo, videoList };
+
+      events.init(eventsObj);
     }
   }
 
   destroy() {
+    events.destroy();
+    
     this.videoList = null;
     this.currentVideo = null;
-    this.videoCount = 0;
 
     // Reset Rootelem
     this.rootElem.style = '';
