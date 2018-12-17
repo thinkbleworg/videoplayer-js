@@ -8,12 +8,23 @@ const setNonPlayingState = () => {
 }
 
 const view = {
+  mouseOverViewClasses: ['playlist-open'],
+  mouseOutViewClasses: ['video-paused'],
+
   toggleInfoLayers(wrapper, show) {
     if (show) {
       wrapper.classList.add('show-info-controls');
     } else {
       wrapper.classList.remove('show-info-controls');
     }
+  },
+
+  canStateChange(cls) {
+    let state = true;
+    cls.forEach((cl) => {
+      state = !videoData.wrapper.classList.contains(cl);
+    });
+    return state;
   }
 };
 
@@ -722,6 +733,245 @@ const toolTipControls = {
   }
 };
 
+const bookmarkControls = {
+  bookmarkBtn: null,
+
+  init() {
+    this.bookmarkBtn = videoData.wrapper.querySelector('.vplayer-btn--bookmarks');
+    if (videoData.config.bookmarkURL && videoData.config.bookmarkURL !== '') {
+      this.toggleBookmarkBtnVisiblity(true);
+    } else {
+      this.toggleBookmarkBtnVisiblity(false);
+    }
+  },
+
+  toggleBookmarkBtnVisiblity(enable) {
+    if (enable) {
+      this.bookmarkBtn.classList.remove('vplayer-btn--disabled');
+      this.bookmarkBtn.classList.remove('vplayer-btn--hide');
+    } else {
+      this.bookmarkBtn.classList.add('vplayer-btn--disabled');
+      this.bookmarkBtn.classList.add('vplayer-btn--hide');
+    }
+  },
+
+  bookmarkRequest() {
+    // Make XHR request
+    // ajax.request({
+    //   method: 'GET',
+    //   url: 'https://swapi.co/api/people/',
+    //   headers: {
+    //     'Content-Type': 'application/json'
+    //   }
+    // }).then((data) => {
+    //   console.log('data request', data);
+    // }, (err) => {
+    //   console.log('error', err);
+    // });
+  }
+};
+
+const playListControls = {
+  playListBtn: null,
+  drawerEl: null,
+  drawerHeader: null,
+  drawerHeaderText: null,
+  drawerClose: null,
+  drawerCloseEvent: null,
+  // cardElems: null,
+
+  init() {
+    this.playListBtn = videoData.wrapper.querySelector('.vplayer-btn--cards');
+    this.drawerEl = videoData.wrapper.querySelector('.vplayer-drawer');
+    this.drawerHeader = this.drawerEl.querySelector('.vplayer-drawer-header');
+    this.drawerHeaderText = this.drawerHeader.querySelector('.vplayer-drawer-header-text');
+    this.drawerClose = this.drawerHeader.querySelector('.vplayer-drawer-btn--close');
+    this.drawerContent = this.drawerEl.querySelector('.vplayer-drawer-content');
+
+
+    if (videoData.videoList.length > 1) {
+      this.togglePlayListBtnVisibility(true);
+    } else {
+      this.togglePlayListBtnVisibility(false);
+    }
+    this.drawerHeaderText.innerText = 'Playlist';
+
+    ui.buildPlayListCards(videoData.videoList, this.drawerContent);
+  },
+
+  togglePlayListBtnVisibility(enable) {
+    if (enable) {
+      this.playListBtn.classList.remove('vplayer-btn--disabled');
+      this.playListBtn.classList.remove('vplayer-btn--hide');
+    } else {
+      this.playListBtn.classList.add('vplayer-btn--disabled');
+      this.playListBtn.classList.add('vplayer-btn--hide');
+    }
+  },
+
+  togglePlayListView(enable) {
+    if (enable) {
+      this.toggleWrapperClass(true);
+      view.toggleInfoLayers(videoData.wrapper, false);
+      this.togglePlayListBtnVisibility(false);
+      this.drawerEl.removeAttribute('aria-hidden');
+      this.drawerEl.classList.add('vplayer-drawer--open');
+      this.initCardEvents();
+    } else {
+      this.destroyCardEvents();
+      this.toggleWrapperClass(false);
+      view.toggleInfoLayers(videoData.wrapper, true);
+      this.drawerEl.classList.remove('vplayer-drawer--open');
+      this.drawerEl.setAttribute('aria-hidden', true);
+      this.togglePlayListBtnVisibility(true);
+    }
+  },
+
+  toggleWrapperClass(add){
+    if (add) {
+      videoData.wrapper.classList.add('playlist-open');
+    } else {
+      videoData.wrapper.classList.remove('playlist-open');
+    }
+  },
+
+  directPlayVideo(videoId) {
+    let videoToBePlayed = videoData.videoList.find((item) => { return item.id === videoId; });
+    setNonPlayingState();
+    videoData.currentVideo = videoToBePlayed;
+    videoData.currentVideo.state = 'playing';
+    this.togglePlayListView(false);
+    events.addVideoData();
+  },
+
+  initCardEvents() {
+    let cardClickElems = this.drawerContent.querySelectorAll('.vplayer-card-click');
+    cardClickElems.forEach((card) => {
+      card.addEventListener('click', card.cardClickEvent = (e) => {
+        let currentTarget = e.currentTarget;
+        let videoId = currentTarget.getAttribute('data-video-id');
+        console.log('card event videoId', videoId);
+        this.directPlayVideo(videoId);
+      }, true);
+    });
+  },
+
+  destroyCardEvents() {
+    let cardClickElems = this.drawerContent.querySelectorAll('.vplayer-card-click');
+    cardClickElems.forEach((card) => {
+      card.removeEventListener("click", card.cardClickEvent, true);
+    });
+    this.cardClickEvent = null;
+  }
+};
+
+const ajax = {
+  request (opts) {
+    // Set up our HTTP request
+    var xhr = window.ActiveX ? new ActiveXObject("Microsoft.XMLHTTP"): new XMLHttpRequest();
+
+    var defaults =  {
+      withCredentials: false,
+      method: 'GET'
+    };
+    let options = Object.assign(defaults, opts);
+    options.baseUrl = options.baseUrl || '';
+    options.data = options.data || null;
+
+    var defaultHeaders = {
+      // 'Accept': 'text/plain',
+      // 'Access-Control-Allow-Origin': 'http://localhost:8080/',
+      // 'Access-Control-Allow-Credentials': true,
+      'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE',
+      'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
+    };
+
+    options.headers = Object.assign(defaultHeaders, options.headers);
+
+    function getUrlWithData (url, data, type) {
+      if (type.toLowerCase() !== 'get' || !data) {
+        return url;
+      }
+      var dataAsQueryString = objectToQueryString(data)
+      var queryStringSeparator = url.indexOf('?') > -1 ? '&' : '?'
+      return url + queryStringSeparator + dataAsQueryString;
+    }
+
+    function objectToQueryString (data) {
+      return isObject(data) ? getQueryString(data) : data
+    }
+
+    function isObject (data) {
+      return Object.prototype.toString.call(data) === '[object Object]'
+    }
+
+    function getQueryString (obj, prefix) {
+      return Object.keys(obj).map(function (key) {
+        if (obj.hasOwnProperty(key) && undefined !== obj[key]) {
+          var val = obj[key]
+          key = prefix ? prefix + '[' + key + ']' : key
+          return val !== null && typeof val === 'object' ? getQueryString(val, key) : encode(key) + '=' + encode(val)
+        }
+      })
+        .filter(Boolean)
+        .join('&')
+    }
+
+    function encode (value) {
+      return encodeURIComponent(value)
+    }
+
+    function setHeaders (xhr, headers, data) {
+      headers = headers || {}
+      if (!hasContentType(headers)) {
+        headers['Content-Type'] = isObject(data) ? 'application/json' : 'application/x-www-form-urlencoded';
+      }
+      Object.keys(headers).forEach((name) => {
+        (headers[name] && xhr.setRequestHeader(name, headers[name]))
+      });
+    }
+
+    function hasContentType (headers) {
+      return Object.keys(headers).some(function (name) {
+        return name.toLowerCase() === 'content-type'
+      });
+    }
+
+    if (options.url) {
+      options.url = options.baseUrl + options.url;
+
+      let urlToRequest = getUrlWithData(options.url, options.data, options.method)
+
+      xhr.open(options.method, urlToRequest, true);
+      if (options.hasOwnProperty('withCredentials')) {
+        xhr.withCredentials = options.withCredentials;
+      }
+      setHeaders(xhr, options.headers, options.data);
+      // xhr.setRequestHeader('Accept', options.type || 'text/plain');
+      xhr.send(isObject(options.data) ? JSON.stringify(options.data) : options.data);
+
+      return new Promise((resolve, reject) => {
+        xhr.onreadystatechange = () => {
+          if (xhr.readyState === 4) {
+            // Process our return data
+          	if (xhr.status >= 200 && xhr.status < 300) {
+          		console.log('success!', xhr);
+              resolve(JSON.parse(xhr.responseText));
+          	} else {
+          		console.log('The request failed!');
+              reject(xhr.status);
+          	}
+          } else {
+            console.log("xhr processing going on");
+          }
+        }
+      });
+    } else {
+      console.log('url not defined in ajax request');
+    }
+  }
+};
+
 const events = {
   init(eventsObj) {
     videoData = eventsObj;
@@ -754,6 +1004,8 @@ const events = {
     settingsControls.init();
     keyboardEvents.init();
     toolTipControls.init();
+    bookmarkControls.init();
+    playListControls.init();
 
     if (videoData.config.autoPlay) {
       playPausebtnControls.playVideo(true)
@@ -809,7 +1061,9 @@ const events = {
     }
 
     if (target === videoData.videoEl || target.closest('.vplayer-bottom-layer') !== null || target.closest('.vplayer-wrapper') !== null || target === videoData.wrapper) {
-      view.toggleInfoLayers(videoData.wrapper, true);
+      if (view.canStateChange(view.mouseOverViewClasses)) {
+        view.toggleInfoLayers(videoData.wrapper, true);
+      }
     }
   },
 
@@ -825,7 +1079,7 @@ const events = {
     }
 
     if (target === videoData.videoEl || target.closest('.vplayer-bottom-layer') !== null || target.closest('.vplayer-wrapper') !== null || target === videoData.wrapper) {
-      if (!videoData.wrapper.classList.contains('video-paused')) {
+      if (view.canStateChange(view.mouseOutViewClasses)) {
         view.toggleInfoLayers(videoData.wrapper, false);
       }
     }
@@ -834,7 +1088,6 @@ const events = {
   onclickEvent(event) {
     let target = event.target;
     console.log('on click event', target);
-    debugger;
     if (target === prevNextbtnControls.nextBtn) {
       prevNextbtnControls.playNextVideo();
     } else if (target === prevNextbtnControls.prevBtn) {
@@ -847,6 +1100,12 @@ const events = {
       customTracksControls.toggleCaptioning();
     } else if (target === settingsControls.settingsBtn) {
       settingsControls.animateSettingsBtn();
+    } else if (target === bookmarkControls.bookmarkBtn) {
+      bookmarkControls.bookmarkRequest();
+    } else if (target === playListControls.playListBtn) {
+      playListControls.togglePlayListView(true);
+    } else if (target === playListControls.drawerClose) {
+      playListControls.togglePlayListView(false);
     } else if (target.closest('.vplayer-progress-bar-wrapper') === null) {
       // Target should not be in scrubber and controls
       if (target.closest('.vplayer-bottom-layer') !== null || target.closest('.vplayer-gradient-bottom') !== null || target.closest('.vplayer-top-layer') !== null || target.closest('.vplayer-gradient-top') !== null ||
@@ -867,7 +1126,7 @@ const events = {
 
   onpauseEvent(event) {
     let target = event.target;
-    
+
     playPausebtnControls.playBtnUIHandler('play');
     videoData.wrapper.classList.add('video-paused');
     view.toggleInfoLayers(videoData.wrapper, true);

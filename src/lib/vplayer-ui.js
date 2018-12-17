@@ -136,6 +136,15 @@ function _buildTopLayer(wrapperEl, titleObj) {
   let titleLayer = _createElements({classNames: ['vplayer-title']}, topLayer);
   let text = _createElements({classNames: ['vplayer-title-text']}, titleLayer);
 
+  let btnLayer = _createElements({classNames: ['vplayer-top-controls']}, topLayer);
+
+  let playlistBtnHTML = '<button class="vplayer-btn vplayer-btn--cards vplayer-btn--hide vplayer-btn--disabled" aria-label="Show cards" title=""> <div class="vplayer-btn--cards-icon" title="Playlist"> <svg height="100%" viewBox="0 0 36 36" width="100%"> <use class="vplayer-svg-shadow"></use> <path class="vplayer-svg-fill" d="M18,8 C12.47,8 8,12.47 8,18 C8,23.52 12.47,28 18,28 C23.52,28 28,23.52 28,18 C28,12.47 23.52,8 18,8 L18,8 Z M17,16 L19,16 L19,24 L17,24 L17,16 Z M17,12 L19,12 L19,14 L17,14 L17,12 Z"></path> </svg> </div></button>';
+
+  let bookMarkBtnHTML = '<button class="vplayer-btn vplayer-btn--bookmarks vplayer-btn--hide vplayer-btn--disabled" title="Bookmark"><svg viewBox="0 0 32 32" width="100%" height="100%"><use class="vplayer-svg-shadow"></use><path class="vplayer-svg-fill" d="M25,27l-9-6.75L7,27V4h18V27z"/></svg></button>';
+
+  btnLayer.innerHTML += bookMarkBtnHTML;
+  btnLayer.innerHTML += playlistBtnHTML;
+
   return topLayer;
 }
 
@@ -232,6 +241,65 @@ function _buildTooltipLayer(wrapperEl) {
   return tooltipWrapperEl;
 }
 
+
+function _buildPlayList(wrapperEl) {
+  let playlistWrapperElOpt = {
+    classNames: ['vplayer-drawer'],
+    attrs: {
+      'aria-hidden': true
+    }
+  };
+
+  let playlistWrapperEl = _createElements(playlistWrapperElOpt, wrapperEl);
+
+  playlistWrapperEl.innerHTML = '<div class="vplayer-drawer-header"> <span class="vplayer-drawer-header-text"></span> <button class="vplayer-drawer-btn--close vplayer-btn" tabindex="0"><div class="vplayer-drawer-btn--close-size"><svg viewBox="0 0 48 48" width="100%" height="100%"><g><use class="vplayer-svg-shadow"></use><path class="vplayer-svg-fill" d="M 36.019531 8.445313 L 39.558594 11.980469 L 11.980469 39.554688 L 8.445313 36.019531 Z "/><path class="vplayer-svg-fill" d="M 39.554688 36.023438 L 36.019531 39.558594 L 8.445313 11.976563 L 11.980469 8.441406 Z "/></g></svg></div> </button> </div><div class="vplayer-drawer-content"></div>';
+
+  return playlistWrapperEl;
+}
+
+function _buildPlayListCard(videoList, wrapperEl) {
+  if (wrapperEl.querySelector('.vplayer-card') !== null) {
+    return;
+  }
+
+  videoList.forEach((item) => {
+    let videoCardElOpt = {
+      classNames: ['vplayer-card','vplayer-card--video']
+    };
+    let videoCardEl = _createElements(videoCardElOpt, wrapperEl);
+
+    let cardLinkElOpt = {
+      tagName: 'a',
+      classNames: ['vplayer-card-click'],
+      attrs: {
+        'data-video-id': item.id
+      }
+    };
+    let cardLinkEl = _createElements(cardLinkElOpt, videoCardEl);
+    let posterStyle = '';
+    if (item.poster && item.poster != null) {
+      posterStyle = `background-image:url(${item.poster})`;
+    }
+    let posterHTML = `<div class="vplayer-card-image" style="${posterStyle}"></div>`;
+
+    if (item.duration) {
+      let durationHTML = `<span class="vplayer-card-video-duration">${item.duration}</span>`;
+      posterHTML.innerHTML += durationHTML;
+    }
+
+    let cardContentElOpt = {
+      classNames: ['vplayer-card-content']
+    };
+    let cardContentEl = _createElements(cardContentElOpt);
+
+    let cardTitle = `<h2 class="vplayer-card-primary-link" dir="ltr">${item.info.title}</h2>`;
+
+    cardContentEl.innerHTML += cardTitle;
+
+    cardLinkEl.innerHTML += posterHTML + cardContentEl.innerHTML;
+  });
+}
+
 const ui = {
   config: null,
 
@@ -267,6 +335,8 @@ const ui = {
     let customTrackUI = _buildCustomTracks(wrapper);
 
     let tooltipLayer = _buildTooltipLayer(wrapper);
+
+    let playlistLayer = _buildPlayList(wrapper);
 
     let topGradient = _createElements({classNames: ['vplayer-gradient-top']}, wrapper);
 
@@ -373,6 +443,10 @@ const ui = {
         nextBtn.classList.add(className);
       });
     }
+  },
+
+  buildPlayListCards(videoList, wrapper) {
+    return _buildPlayListCard(videoList, wrapper);
   }
 };
 

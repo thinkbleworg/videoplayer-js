@@ -33,6 +33,7 @@ $z-index-scrubber-container: 30; //43
 $z-index-scrubber-pull-indicator: 29; //42
 $z-index-tooltip-wrapper: 50; //1002
 $z-index-settings-menu: 40; //71
+$z-index-cards-btn: 31; //62
 
 
 
@@ -177,6 +178,10 @@ $z-index-settings-menu: 40; //71
           -o-text-overflow: ellipsis;
           text-overflow: ellipsis;
         }
+      }
+
+      &-top-controls {
+        white-space: nowrap;
       }
     }
   }
@@ -544,6 +549,32 @@ $z-index-settings-menu: 40; //71
         }
       }
     }
+
+    &--cards {
+      -moz-transition: opacity $animation-duration-base $animation-transition-cubic-bezier;
+      -webkit-transition: opacity $animation-duration-base $animation-transition-cubic-bezier;
+      transition: opacity $animation-duration-base $animation-transition-cubic-bezier;
+      pointer-events: all;
+      position: relative;
+      z-index: $z-index-cards-btn;
+
+      width: auto;
+      height: auto;
+
+      &.vplayer-btn--hide {
+        opacity: 0;
+        -moz-transition: opacity $animation-duration-fast $animation-transition-layers;
+        -webkit-transition: opacity $animation-duration-fast $animation-transition-layers;
+        transition: opacity $animation-duration-fast $animation-transition-layers;
+      }
+
+      &-icon {
+        margin: auto;
+        width: 36px;
+        height: 36px;
+        pointer-events: none;
+      }
+    }
   }
 
   &-svg {
@@ -861,6 +892,29 @@ $z-index-settings-menu: 40; //71
 
     &-content {
       padding: 8px 10px;
+
+      &>:first-child {
+        margin-top: 0;
+      }
+
+      &>:last-child {
+        margin-bottom: 0
+      }
+    }
+
+    &--video {
+      h2 {
+        -webkit-line-clamp: 3;
+        max-height: 45px;
+      }
+    }
+
+    &-video-duration {
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
+      padding: 2px 4px;
+      background-color: #000;
     }
 
   }
@@ -886,6 +940,10 @@ $z-index-settings-menu: 40; //71
     -webkit-transform: translateX(177px);
     transform: translateX(177px);
 
+    &[aria-hidden=true] {
+      display: none;
+    }
+
     * {
       text-align: left;
     }
@@ -896,16 +954,14 @@ $z-index-settings-menu: 40; //71
     }
 
     &--open {
-      .vplayer-drawer {
-        -moz-transition: -moz-transform $animation-duration-base $animation-transition-cubic-bezier;
-        -webkit-transition: -webkit-transform $animation-duration-base $animation-transition-cubic-bezier;
-        -ms-transition: -ms-transform $animation-duration-base $animation-transition-cubic-bezier;
-        transition: transform $animation-duration-base $animation-transition-cubic-bezier;
-        -moz-transform: translateX(0);
-        -ms-transform: translateX(0);
-        -webkit-transform: translateX(0);
-        transform: translateX(0)
-      }
+      -moz-transition: -moz-transform $animation-duration-base $animation-transition-cubic-bezier;
+      -webkit-transition: -webkit-transform $animation-duration-base $animation-transition-cubic-bezier;
+      -ms-transition: -ms-transform $animation-duration-base $animation-transition-cubic-bezier;
+      transition: transform $animation-duration-base $animation-transition-cubic-bezier;
+      -moz-transform: translateX(0);
+      -ms-transform: translateX(0);
+      -webkit-transform: translateX(0);
+      transform: translateX(0);
     }
 
     &-header {
@@ -973,13 +1029,19 @@ $z-index-settings-menu: 40; //71
       position: absolute;
       top: 0;
       right: 0;
-      padding: 16px;
       opacity: .75;
       cursor: pointer;
 
       &::after {
         display: block;
         content: '';
+      }
+
+      &-size {
+        width: 16px;
+        height: 16px;
+        margin: 0 auto;
+        pointer-events: none;
       }
 
       &:hover {
@@ -1025,6 +1087,12 @@ $z-index-settings-menu: 40; //71
         &-content {
           padding: 6px 8px;
         }
+
+        &--video {
+          h2 {
+             max-height: 36px;
+          }
+        }
       }
     }
 
@@ -1067,6 +1135,12 @@ $z-index-settings-menu: 40; //71
 
         &-content {
           padding: 12px 16px;
+        }
+
+        &--video {
+          h2 {
+             max-height: 72px
+          }
         }
       }
     }
@@ -1303,6 +1377,16 @@ $z-index-settings-menu: 40; //71
           &[aria-pressed=true]::after {
             width: 27px;
             left: 14px;
+          }
+
+          &--cards {
+            width: auto;
+            height: auto;
+
+            &-icon {
+              width: 54px;
+              height: 54px;
+            }
           }
         }
 
