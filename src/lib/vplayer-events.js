@@ -59,8 +59,8 @@ const playPausebtnControls = {
    *
    * @param  {autoPlay} bool Force play the video by setting the video to mute
    */
-  playVideo(autoPlay) {
-    if (autoPlay) {
+  playVideo(autoplay) {
+    if (autoplay) {
       videoData.videoEl.muted = true;
       videoData.videoEl.play();
       // TODO: Unmute the video after playing
@@ -104,6 +104,10 @@ const playPausebtnControls = {
       svgPath.setAttribute('d', reloadD);
       this.playBtn.setAttribute('title', 'Reload');
     }
+  },
+
+  onAutoPlay() {
+    this.playVideo(true);
   }
 };
 
@@ -600,9 +604,17 @@ const customTracksControls = {
 
 const settingsControls = {
   settingsBtn: null,
+  settingsPopupEl: null,
+  isShow: false,
+  settingsObj: null,
+  isLanguagePresent: false,
+  panelHeaderClickEvent: null,
 
   init() {
     this.settingsBtn = videoData.wrapper.querySelector('.vplayer-btn--settings');
+    this.settingsPopupEl = videoData.wrapper.querySelector('.vplayer-settings-menu');
+
+    this.buildSettingsMainMenu();
   },
 
   animateSettingsBtn() {
@@ -612,7 +624,191 @@ const settingsControls = {
     } else {
       this.settingsBtn.setAttribute('aria-expanded', true);
     }
+    this.toggleSettingsPopup();
   },
+
+  toggleSettingsPopup() {
+    if (!this.isShow) {
+      this.settingsPopupEl.removeAttribute('aria-hidden');
+      this.initSettingsMenuEvents();
+    } else {
+      this.settingsPopupEl.setAttribute('aria-hidden', true);
+      this.destroySettingsMenuEvents();
+    }
+
+    this.isShow = !this.isShow;
+  },
+
+  buildSettingsObj(config, currentVideo) {
+    // Deep copying the config settings
+    let settings  = JSON.parse(JSON.stringify(config.settings));
+    let langObjPresent = false;
+    let modifiedSettings = settings.map((item) => {
+      if (item.label === 'autoplay') {
+        item.value = config.autoplay;
+      }
+
+      if (item.label === 'speed') {
+        let options = item.options
+        options.find((opt) => {
+          if (String(opt.value) === String(config.speed)) {
+            opt.selected = true;
+          }
+        });
+      }
+      return item;
+    });
+
+    if (currentVideo.hasOwnProperty('lang')) {
+      this.isLanguagePresent = true;
+      let languages = {
+        label: 'lang',
+        title: 'Language',
+        role: 'dropdown',
+        options: []
+      };
+      currentVideo.lang.forEach((item) => {
+        languages.options.push({
+          'label': item.language.toUpperCase(),
+          'value': item.language,
+          'selected': item.default
+        });
+      });
+      modifiedSettings = modifiedSettings.filter(i => i.label !== 'lang');
+      modifiedSettings.push(languages);
+    }
+    videoData.config.settings = modifiedSettings;
+    this.settingsObj = modifiedSettings;
+    return this.settingsObj;
+  },
+
+  buildSettingsMainMenu() {
+    this.buildSettingsObj(videoData.config, videoData.currentVideo);
+    this.settingsPopupEl.innerHTML = '';
+    ui.buildSettingsMenu(this.settingsObj, this.settingsPopupEl);
+  },
+
+  checkboxToggle(target, attr) {
+    if (target !== null) {
+      let isChecked = (target.getAttribute('aria-checked') === 'true');
+      target.setAttribute('aria-checked', !isChecked);
+      let currentSettingsObj = this.settingsObj.find((item) => {
+        return item.label === attr;
+      });
+      currentSettingsObj.value = !isChecked;
+
+      videoData.config[attr] = !isChecked;
+    }
+  },
+
+  showDropdownOpt(target, attr) {
+    if (target !== null) {
+      let currentSettingsObj = this.settingsObj.find((item) => {
+        return item.label === attr;
+      });
+      this.settingsPopupEl.innerHTML = '';
+      ui.buildSettingsMenuOptions(currentSettingsObj.options, this.settingsPopupEl, currentSettingsObj.title, attr);
+      this.destroySettingsMenuEvents();
+      this.initSettingsMenuEvents();
+    }
+  },
+
+  selectMenuOption(target, attr) {
+    if (target !== null) {
+      let isChecked = (target.getAttribute('aria-checked') === 'true');
+      target.setAttribute('aria-checked', !isChecked);
+      let parentAttr = target.getAttribute('data-parent-attr');
+      let currentSettingsObj = this.settingsObj.find((item) => {
+        return item.label === parentAttr;
+      });
+      //Set current option as selected
+      let valueAttr = target.getAttribute('data-value');
+      currentSettingsObj.options.forEach((item) => {
+        if (String(item.value) === valueAttr) {
+          item.selected = true;
+        } else {
+          item.selected = false;
+        }
+      });
+      if (videoData.config.hasOwnProperty(parentAttr)) {
+        videoData.config[parentAttr] = valueAttr;
+      }
+      this.backToSettingsMainMenu();
+    }
+  },
+
+  backToSettingsMainMenu() {
+    this.destroySettingsMenuEvents();
+    this.buildSettingsMainMenu();
+    this.initSettingsMenuEvents();
+  },
+
+  initSettingsMenuEvents() {
+    let menus = this.settingsPopupEl.querySelectorAll('.vplayer-menu-item');
+    menus.forEach((menu) => {
+      menu.addEventListener('click',  menu.menuClickEvent = (e) => {
+        let currentTarget = e.currentTarget;
+        this.handleMenuEvents(currentTarget);
+      }, true);
+    });
+
+    let panelHeader = this.settingsPopupEl.querySelector('.vplayer-panel-header');
+    if (panelHeader !== null) {
+      panelHeader.addEventListener('click', this.panelHeaderClickEvent = (e) => {
+        this.backToSettingsMainMenu();
+      }, true);
+    }
+  },
+
+  handleMenuEvents(target) {
+    let attr;
+    if (target.getAttribute('data-attr') !== null) {
+      attr = target.getAttribute('data-attr');
+    } else {
+      attr = '';
+    }
+
+    switch (attr) {
+      case 'autoplay':
+        this.checkboxToggle(target, attr);
+        playPausebtnControls.onAutoPlay();
+        break;
+
+      case 'speed':
+        this.showDropdownOpt(target, attr);
+        break;
+
+      case 'speed-options':
+        let val = target.getAttribute('data-value');
+        this.selectMenuOption(target, attr);
+        speedControls.trigger(parseFloat(val));
+        break;
+
+      case 'lang':
+        this.showDropdownOpt(target, attr);
+        break;
+
+      case 'lang-options':
+        // let val = target.getAttribute('data-value');
+        this.selectMenuOption(target, attr);
+        // speedControls.trigger(parseFloat(val));
+        break;
+
+    }
+  },
+
+  destroySettingsMenuEvents() {
+    let menus = this.settingsPopupEl.querySelectorAll('.vplayer-menu-item-content');
+    menus.forEach((menu) => {
+      menu.removeEventListener("click", menu.menuClickEvent, true);
+      menu.menuClickEvent = null;
+    });
+
+    let panelHeader = this.settingsPopupEl.querySelector('.vplayer-panel-header');
+    if (panelHeader !== null) {
+      panelHeader.removeEventListener('click', this.panelHeaderClickEvent, true);
+    }
+  }
 }
 
 const keyboardEvents = {
@@ -665,6 +861,8 @@ const toolTipControls = {
   positionToolTip(eventType) {
     if (eventType === 'next' || eventType === 'prev') {
       let control = videoData.wrapper.querySelector('.vplayer-bottom-layer');
+      let prevBtn = prevNextbtnControls.prevBtn;
+      let nextBtn = prevNextbtnControls.nextBtn;
       let controlBoundaries = control.getBoundingClientRect();
 
       let toolTipBoundaries = {
@@ -673,8 +871,12 @@ const toolTipControls = {
       };
 
       let wrapperBoundaries = videoData.wrapper.getBoundingClientRect();
-
-      let left = controlBoundaries.left;
+      let left = 0;
+      if (eventType === 'next') {
+        left = nextBtn.offsetLeft;
+      } else if (eventType === 'prev') {
+        left = prevBtn.offsetLeft;
+      }
       let top = wrapperBoundaries.height - controlBoundaries.height - toolTipBoundaries.height;
 
       let style = `left: ${left}px; top: ${top}px`;
@@ -778,7 +980,6 @@ const playListControls = {
   drawerHeaderText: null,
   drawerClose: null,
   drawerCloseEvent: null,
-  // cardElems: null,
 
   init() {
     this.playListBtn = videoData.wrapper.querySelector('.vplayer-btn--cards');
@@ -860,8 +1061,14 @@ const playListControls = {
     let cardClickElems = this.drawerContent.querySelectorAll('.vplayer-card-click');
     cardClickElems.forEach((card) => {
       card.removeEventListener("click", card.cardClickEvent, true);
+      card.cardClickEvent = null;
     });
-    this.cardClickEvent = null;
+  }
+};
+
+const speedControls = {
+  trigger(speed) {
+    videoData.videoEl.playbackRate = speed;
   }
 };
 
@@ -1007,8 +1214,8 @@ const events = {
     bookmarkControls.init();
     playListControls.init();
 
-    if (videoData.config.autoPlay) {
-      playPausebtnControls.playVideo(true)
+    if (videoData.config.autoplay) {
+      playPausebtnControls.onAutoPlay(true)
     } else {
       playPausebtnControls.playBtnUIHandler('play');
     }
@@ -1140,8 +1347,7 @@ const events = {
 
     playPausebtnControls.playBtnUIHandler('reload');
     view.toggleInfoLayers(videoData.wrapper, true);
-
-    if (videoData.config.autoPlay) {
+    if (videoData.config.autoplay) {
       // Play Next Video
       prevNextbtnControls.playNextVideo();
     }

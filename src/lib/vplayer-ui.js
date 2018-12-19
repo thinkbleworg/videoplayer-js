@@ -221,7 +221,6 @@ function _buildBottomLayer(wrapperEl) {
   return bottomLayer;
 }
 
-
 function _buildTooltipLayer(wrapperEl) {
   let tooltipWrapperElOpt = {
     classNames: ['vplayer-tooltip-wrapper'],
@@ -240,7 +239,6 @@ function _buildTooltipLayer(wrapperEl) {
 
   return tooltipWrapperEl;
 }
-
 
 function _buildPlayList(wrapperEl) {
   let playlistWrapperElOpt = {
@@ -268,22 +266,35 @@ function _buildPlayListCard(videoList, wrapperEl) {
     };
     let videoCardEl = _createElements(videoCardElOpt, wrapperEl);
 
+    let video = null;
+    if (item.hasOwnProperty('lang')) {
+      // Language is present
+      // Find default Language
+      video = item.lang.find((v) => {
+        if (v.default) {
+          return v;
+        }
+      });
+    } else {
+      video = item;
+    }
+
     let cardLinkElOpt = {
       tagName: 'a',
       classNames: ['vplayer-card-click'],
       attrs: {
-        'data-video-id': item.id
+        'data-video-id': video.id
       }
     };
     let cardLinkEl = _createElements(cardLinkElOpt, videoCardEl);
     let posterStyle = '';
-    if (item.poster && item.poster != null) {
-      posterStyle = `background-image:url(${item.poster})`;
+    if (video.poster && video.poster != null) {
+      posterStyle = `background-image:url(${video.poster})`;
     }
     let posterHTML = `<div class="vplayer-card-image" style="${posterStyle}"></div>`;
 
-    if (item.duration) {
-      let durationHTML = `<span class="vplayer-card-video-duration">${item.duration}</span>`;
+    if (video.duration) {
+      let durationHTML = `<span class="vplayer-card-video-duration">${video.duration}</span>`;
       posterHTML.innerHTML += durationHTML;
     }
 
@@ -292,11 +303,89 @@ function _buildPlayListCard(videoList, wrapperEl) {
     };
     let cardContentEl = _createElements(cardContentElOpt);
 
-    let cardTitle = `<h2 class="vplayer-card-primary-link" dir="ltr">${item.info.title}</h2>`;
+    let cardTitle = `<h2 class="vplayer-card-primary-link" dir="ltr">${video.info.title}</h2>`;
 
     cardContentEl.innerHTML += cardTitle;
 
     cardLinkEl.innerHTML += posterHTML + cardContentEl.innerHTML;
+  });
+}
+
+function _buildSettingsPopup(wrapperEl) {
+  let settingsPopupElOpt = {
+    classNames: ['vplayer-popup', 'vplayer-settings-menu'],
+    attrs: {
+      'aria-hidden': true
+    }
+  };
+
+  let settingsPopupEl = _createElements(settingsPopupElOpt, wrapperEl);
+
+  settingsPopupEl.innerHTML = '<div class="vplayer-panel"></div>';
+
+  return settingsPopupEl;
+}
+
+function _buildSettingsMenu(menuList, wrapperEl) {
+  if (wrapperEl.querySelector('.vplayer-panel-menu') !== null) {
+    return false;
+  }
+  wrapperEl.innerHTML = '<div class="vplayer-panel-menu"></div>';
+  let wrapperToAppend = wrapperEl.querySelector('.vplayer-panel-menu');
+
+  menuList.forEach((menu) => {
+    let menuElOpt = {
+      classNames: ['vplayer-menu-item'],
+      attrs: {
+        tabindex: 0,
+        'data-attr': menu.label
+      }
+    };
+
+    if (menu.role === 'checkbox') {
+      menuElOpt.attrs['role'] = 'menuitemcheckbox'
+      menuElOpt.attrs['aria-checked'] = menu.value;
+    } else if (menu.role ==='dropdown') {
+      menuElOpt.attrs['role'] = 'menuitem'
+      menuElOpt.attrs['aria-dropdown'] = true;
+    }
+    let menuEl = _createElements(menuElOpt, wrapperToAppend);
+
+    let labelHTML = `<div class="vplayer-menu-item-label">${menu.title}</div>`;
+    let contentHTML = '';
+    if (menu.role === 'checkbox') {
+      contentHTML = `<div class="vplayer-menu-item-content"><div class="vplayer-menu-item-toggle-checkbox"></div></div>`
+    } else if (menu.role === 'dropdown') {
+      let selectedItem = menu.options.find((item) => { if (item.selected) { return item; } });
+      contentHTML = `<div class="vplayer-menu-item-content">${selectedItem.label}</div>`;
+    }
+
+    menuEl.innerHTML += labelHTML + contentHTML;
+  });
+}
+
+function _buildSettingsMenuDropdownOptions(menu, wrapperEl, headerLabel, headerAttr) {
+  let headerHTML = `<div class="vplayer-panel-header" data-attr="${headerAttr}-options"><span class="vplayer-panel-title">${headerLabel}</span></div>`;
+
+  wrapperEl.innerHTML = headerHTML + '<div class="vplayer-panel-menu" role="menu"></div>';
+
+  let menuToAppend = wrapperEl.querySelector('.vplayer-panel-menu');
+
+  menu.forEach((menu) => {
+    let menuElOpt = {
+      classNames: ['vplayer-menu-item'],
+      attrs: {
+        tabindex: 0,
+        'role': 'menuitemradio',
+        'data-parent-attr': `${headerAttr}`,
+        'data-attr': `${headerAttr}-options`,
+        'data-value': menu.value,
+        'aria-checked': menu.selected
+      }
+    };
+    let menuEl = _createElements(menuElOpt, menuToAppend);
+    let content = `<div class="vplayer-menu-item-label">${menu.label}</div>`;
+    menuEl.innerHTML += content;
   });
 }
 
@@ -343,6 +432,8 @@ const ui = {
     // let topLayer = _buildTopLayer(wrapper, this.titleObj);
     let topLayer = _buildTopLayer(wrapper);
 
+    let settingsPopup = _buildSettingsPopup(wrapper);
+
     let bottomGradient = _createElements({classNames: ['vplayer-gradient-bottom']}, wrapper);
 
     let bottomLayer = _buildBottomLayer(wrapper);
@@ -359,7 +450,19 @@ const ui = {
     return _removeDOMElement(className, wrapperEl, removeAllMatching);
   },
 
-  addVideoAttrs(video, el) {
+  addVideoAttrs(videoObj, el) {
+    let video = null;
+    if (videoObj.hasOwnProperty('lang')) {
+      // Language is present
+      // Find default Language
+      video = videoObj.lang.find((item) => {
+        if (item.default) {
+          return item;
+        }
+      });
+    } else {
+      video = videoObj;
+    }
     let attrs = {
       src: video.url,
       'data-video-id': video.id,
@@ -447,7 +550,16 @@ const ui = {
 
   buildPlayListCards(videoList, wrapper) {
     return _buildPlayListCard(videoList, wrapper);
+  },
+
+  buildSettingsMenu(menuList, wrapper) {
+    return _buildSettingsMenu(menuList, wrapper);
+  },
+
+  buildSettingsMenuOptions(menuList, wrapper, headerLabel, headerAttr) {
+    return _buildSettingsMenuDropdownOptions(menuList, wrapper, headerLabel, headerAttr);
   }
+
 };
 
 export default ui;

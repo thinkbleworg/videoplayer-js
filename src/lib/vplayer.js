@@ -1,4 +1,4 @@
-import defaultConfig from './vplayer-config';
+import configObject from './vplayer-config';
 import ui from './vplayer-ui';
 import events from './vplayer-events';
 
@@ -6,8 +6,9 @@ class Vplayer {
   constructor(el, options) {
     this.initialized = false;
     this.rootElem = el;
-    this.config = Object.assign(defaultConfig, options);
-
+    this.config = Object.assign(configObject.Config, options);
+    this.config.settings = configObject.Settings;
+    
     this.videoList = this.config.src;
     // Set the videolist item to not-playing initially
     this.videoList.forEach((item) => { item.state = 'not-playing'; });
@@ -34,7 +35,7 @@ class Vplayer {
 
   destroy() {
     events.destroy();
-    
+
     this.videoList = null;
     this.currentVideo = null;
 
