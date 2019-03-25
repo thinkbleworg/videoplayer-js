@@ -6,7 +6,7 @@ const uglifyJsPlugin = require('uglifyjs-webpack-plugin');
 module.exports = {
     entry: './src/index.js',
     output: {
-        library: 'Vplayer',
+        library: 'VplayerJS',
         libraryTarget: 'umd',
         libraryExport: 'default',
         path: path.resolve(__dirname, 'dist'),

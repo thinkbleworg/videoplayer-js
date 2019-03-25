@@ -1,8 +1,11 @@
 import './scss/styles.scss';
+import './scss/modal.scss';
 import './util/object-foreach';
 import './util/array-equal';
 import './util/element-closest.js';
 
-import VplayerJS from './lib/vplayer';
+import Modal from './lib/modal';
 
-export default VplayerJS;
+import Vplayer from './lib/vplayer';
+
+export default { Vplayer, Modal };

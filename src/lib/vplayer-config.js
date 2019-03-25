@@ -6,7 +6,10 @@ const Config = {
   enableCaptions: false,
   customUI: false,
   src: [],
-  speed: 1.0
+  speed: 1.0,
+  isModal: false,
+  modalClass: '',
+  lang: 'en'
 };
 
 const Settings = [

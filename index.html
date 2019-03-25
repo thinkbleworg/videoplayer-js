@@ -48,20 +48,48 @@
           flex: 1;
           padding: 25px;
         }
+
+        .vplayer-custom-modal.vplayer-modal .vplayer-modal-content-box {
+          background: transparent;
+        }
+
+
+        .vplayer-custom-modal.vplayer-modal .vplayer-modal-content {
+          padding: 0;
+        }
     </style>
   </head>
   <body>
     <div class="view">
       <div class="view-l">
         <div id="app" class=""></div>
+        <div id="app2" style="margin-top: 25px;" class=""></div>
+        <div class="trigger-modal">Click to open modal</div>
       </div>
       <div class="view-s">
 
       </div>
     </div>
+
+    <button class="modal-trigger">Click to open Modal</button>
+
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        var el = document.querySelector('#app');
+        var { Modal, Vplayer } = VplayerJS;
+        var vplayer;
+
+        var modalOptions = {
+          cssClass: ['vplayer-custom-modal'],
+          onOpen: function () { modalToggle(true) },
+          onClose: function () { modalToggle(false) },
+          closeIconPosition: 'outside'
+        };
+
+        var vplayerModal = new Modal(modalOptions);
+        vplayerModal.init();
+        vplayerModal.setContent('<div id="v-app" class=""></div>');
+
+
         var options = {
           autoplay: false,
           enableCaptions: false,
@@ -86,7 +114,7 @@
                   titleLinkTarget: '_blank',
                 },
                 tracks: [],
-                default: true,
+                playingState: true,
                 language: 'en',
               },
               {
@@ -100,7 +128,7 @@
                   titleLinkTarget: '_blank',
                 },
                 tracks: [],
-                default: false,
+                playingState: false,
                 language: 'de'
               }
             ],
@@ -116,27 +144,69 @@
           },
           {
             id: '2',
-            url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video2.mp4',
-            type: 'video/mp4',
-            poster: null,
-            info: {
-              title: 'Screw Gauge',
-              titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video2.mp4',
-              titleLinkTarget: '_blank',
-            },
-            tracks: []
+            lang: [
+              {
+                id: '2.1',
+                url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video2.mp4',
+                type: 'video/mp4',
+                poster: null,
+                info: {
+                  title: 'Screw Gauge',
+                  titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video2.mp4',
+                  titleLinkTarget: '_blank',
+                },
+                tracks: [],
+                playingState: true,
+                language: 'en',
+              },
+              {
+                id: '2.2',
+                url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video1.mp4',
+                type: 'video/mp4',
+                poster: null,
+                info: {
+                  title: 'Vernier Caliper',
+                  titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video1.mp4',
+                  titleLinkTarget: '_blank',
+                },
+                tracks: [],
+                playingState: false,
+                language: 'de'
+              }
+            ]
           },
           {
             id: '3',
-            url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video3.mp4',
-            type: 'video/mp4',
-            poster: 'https://i.ytimg.com/vi/4YQZxm8jql0/hqdefault.jpg?sqp=-oaymwEZCNACELwBSFXyq4qpAwsIARUAAIhCGAFwAQ==&rs=AOn4CLBSztal6XTUliFHKqJUZ1kaqufgHg',
-            info: {
-              title: 'Verification of Law of Forces',
-              titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video3.mp4',
-              titleLinkTarget: '_blank',
-            },
-            tracks: []
+            lang: [
+              {
+                id: '3.1',
+                url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video3.mp4',
+                type: 'video/mp4',
+                poster: 'https://i.ytimg.com/vi/4YQZxm8jql0/hqdefault.jpg?sqp=-oaymwEZCNACELwBSFXyq4qpAwsIARUAAIhCGAFwAQ==&rs=AOn4CLBSztal6XTUliFHKqJUZ1kaqufgHg',
+                info: {
+                  title: 'Verification of Law of Forces',
+                  titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video3.mp4',
+                  titleLinkTarget: '_blank',
+                },
+                tracks: [],
+                playingState: true,
+                language: 'en',
+              },
+              {
+                id: '3.2',
+                url: 'http://61.12.44.50/flexshare/webserver/sample_videos/video2.mp4',
+                type: 'video/mp4',
+                poster: null,
+                info: {
+                  title: 'Screw Gauge',
+                  titleExternalLink: 'http://61.12.44.50/flexshare/webserver/sample_videos/video2.mp4',
+                  titleLinkTarget: '_blank',
+                },
+                tracks: [],
+                playingState: false,
+                language: 'de'
+              }
+            ]
           },
           {
             id: '4',
@@ -180,9 +250,34 @@
             }
           },
         ];
-        let vplayer = new Vplayer(el, options);
 
-        vplayer.init();
+        function modalToggle(isOpen) {
+          var el = document.querySelector('#v-app');
+          if (el !== null) {
+            if (isOpen) {
+              options.isModal = true;
+              options.modalClass = modalOptions.cssClass[0];
+              vplayer = new Vplayer(el, options);
+              vplayer.init();
+            } else {
+              vplayer.destroy();
+            }
+          }
+        }
+
+        document.querySelector('.modal-trigger').addEventListener('click', function() {
+          vplayerModal.open();
+        });
+
+        // Code to add in a page dom instead of modal
+        var el = document.querySelector('#app');
+        let vplayerNew = new Vplayer(el, options);
+        vplayerNew.init();
+
+        // Code to add in a page dom instead of modal
+        var el = document.querySelector('#app2');
+        let vplayerNew2 = new Vplayer(el, options);
+        vplayerNew2.init();
       });
     </script>
   </body>

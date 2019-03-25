@@ -1,9 +1,6 @@
 import './range';
-import ui from './vplayer-ui';
 
-let videoData = null;
-
-const setNonPlayingState = () => {
+const setNonPlayingState = (videoData) => {
   return videoData.videoList.forEach((item) => { item.state = 'not-playing'; });
 }
 
@@ -19,10 +16,10 @@ const view = {
     }
   },
 
-  canStateChange(cls) {
+  canStateChange(wrapper, cls) {
     let state = true;
     cls.forEach((cl) => {
-      state = !videoData.wrapper.classList.contains(cl);
+      state = !wrapper.classList.contains(cl);
     });
     return state;
   }
@@ -35,17 +32,17 @@ const playPausebtnControls = {
   videoTopGradient: null,
 
   init() {
-    this.playBtn = videoData.wrapper.querySelector('.vplayer-btn--play');
-    this.videoBottomGradient = videoData.wrapper.querySelector('.vplayer-gradient-bottom');
-    this.videoTopLayer = videoData.wrapper.querySelector('.vplayer-top-layer');
-    this.videoTopGradient = videoData.wrapper.querySelector('.vplayer-gradient-top');
+    this.playBtn = this.videoData.wrapper.querySelector('.vplayer-btn--play');
+    this.videoBottomGradient = this.videoData.wrapper.querySelector('.vplayer-gradient-bottom');
+    this.videoTopLayer = this.videoData.wrapper.querySelector('.vplayer-top-layer');
+    this.videoTopGradient = this.videoData.wrapper.querySelector('.vplayer-gradient-top');
   },
 
   /**
    * togglePlayPause - Toggle between video Play and Pause
    */
   togglePlayPause() {
-    if ( videoData.videoEl.paused || videoData.videoEl.ended ) {
+    if ( this.videoData.videoEl.paused || this.videoData.videoEl.ended ) {
       this.playVideo();
     } else {
       this.pauseVideo();
@@ -61,14 +58,15 @@ const playPausebtnControls = {
    */
   playVideo(autoplay) {
     if (autoplay) {
-      videoData.videoEl.muted = true;
-      videoData.videoEl.play();
+      // this.eventObj.volumeControls.toggleMuted();
+      // this.videoData.videoEl.muted = true;
+      this.videoData.videoEl.play();
       // TODO: Unmute the video after playing
     } else {
-      if ( videoData.videoEl.ended ) {
-        videoData.videoEl.currentTime = 0;
+      if ( this.videoData.videoEl.ended ) {
+        this.videoData.videoEl.currentTime = 0;
       }
-      videoData.videoEl.play();
+      this.videoData.videoEl.play();
     }
     this.playBtnUIHandler('pause');
   },
@@ -78,7 +76,7 @@ const playPausebtnControls = {
    * Change the Pause btn to Play btn
    */
   pauseVideo() {
-    videoData.videoEl.pause();
+    this.videoData.videoEl.pause();
     this.playBtnUIHandler('play');
   },
 
@@ -118,71 +116,83 @@ const prevNextbtnControls = {
   currentVideoIndex: null,
 
   init() {
-    this.prevBtn = videoData.wrapper.querySelector('.vplayer-btn--prev');
-    this.nextBtn = videoData.wrapper.querySelector('.vplayer-btn--next');
-    this.previewWrapper = videoData.wrapper.querySelector('.vplayer-tooltip-wrapper');
+    this.prevBtn = this.videoData.wrapper.querySelector('.vplayer-btn--prev');
+    this.nextBtn = this.videoData.wrapper.querySelector('.vplayer-btn--next');
+    this.previewWrapper = this.videoData.wrapper.querySelector('.vplayer-tooltip-wrapper');
 
-    this.currentVideoIndex = videoData.videoList.findIndex((item) => { return item.state === 'playing'; });
+    this.currentVideoIndex = this.videoData.videoList.findIndex((item) => { return item.state === 'playing'; });
   },
 
   getNextVideoData() {
     let nextVideoIndex = this.currentVideoIndex + 1;
-    let nextVideo = videoData.videoList[nextVideoIndex];
+    let nextVideo = this.videoData.videoList[nextVideoIndex];
 
     return nextVideo;
   },
 
   getPrevVideoData() {
     let prevVideoIndex = this.currentVideoIndex - 1;
-    let prevVideo = videoData.videoList[prevVideoIndex];
+    let prevVideo = this.videoData.videoList[prevVideoIndex];
 
     return prevVideo;
   },
 
   playPrevVideo() {
-    setNonPlayingState();
-    videoData.currentVideo = this.getPrevVideoData();
-    videoData.currentVideo.state = 'playing';
+    setNonPlayingState(this.videoData);
+    this.videoData.currentVideo = this.getPrevVideoData();
+    this.videoData.currentVideo.state = 'playing';
+    this.resetConfigOptions();
 
-    events.addVideoData();
+    this.eventObj.addVideoData();
   },
 
   playNextVideo() {
-    setNonPlayingState();
-    videoData.currentVideo = this.getNextVideoData();
-    videoData.currentVideo.state = 'playing';
+    setNonPlayingState(this.videoData);
+    this.videoData.currentVideo = this.getNextVideoData();
+    this.videoData.currentVideo.state = 'playing';
+    this.resetConfigOptions();
 
-    events.addVideoData();
+    this.eventObj.addVideoData();
+  },
+
+  resetConfigOptions() {
+    let videoToBePlayedLangObj = this.videoData.currentVideo.lang.find((item) => { return item.playingState; });
+    let language = videoToBePlayedLangObj.language;
+
+    this.videoData.config.lang = language;
+    this.videoData.config.speed = 1.0;
   },
 
   previewVideo(type) {
     if (type === 'next') {
       let nextVideo = this.getNextVideoData();
+      let videoObj = nextVideo.lang.find((item) => { return item.playingState; });
 
       let opt = {
         eventType: 'next',
-        bgImage: nextVideo.poster,
-        videoTitle: nextVideo.info.title,
+        bgImage: videoObj.poster,
+        videoTitle: videoObj.info.title,
         videoPageType: 'Next'
       };
-      toolTipControls.setPreview(opt);
+      this.eventObj.toolTipControls.setPreview(opt);
     } else if (type === 'prev') {
       let prevVideo = this.getPrevVideoData();
+      let videoObj = prevVideo.lang.find((item) => { return item.playingState; });
 
       let opt = {
         eventType: 'prev',
-        bgImage: prevVideo.poster,
-        videoTitle: prevVideo.info.title,
+        bgImage: videoObj.poster,
+        videoTitle: videoObj.info.title,
         videoPageType: 'Prev'
       };
-      toolTipControls.setPreview(opt);
+      this.eventObj.toolTipControls.setPreview(opt);
     } else if (type === 'timeline') {
-
+      // TODO: Add Timeline preview
     }
   },
 
   closePreview() {
-    toolTipControls.reset();
+    this.eventObj.toolTipControls.reset();
   }
 }
 
@@ -194,10 +204,10 @@ const fullScreenControls = {
   videoTopGradient: null,
 
   init() {
-    this.fullScreenBtn = videoData.wrapper.querySelector(".vplayer-btn--fullscreen"),
-    this.videoBottomGradient = videoData.wrapper.querySelector('.vplayer-gradient-bottom');
-    this.videoTopLayer = videoData.wrapper.querySelector('.vplayer-top-layer');
-    this.videoTopGradient = videoData.wrapper.querySelector('.vplayer-gradient-top');
+    this.fullScreenBtn = this.videoData.wrapper.querySelector(".vplayer-btn--fullscreen"),
+    this.videoBottomGradient = this.videoData.wrapper.querySelector('.vplayer-gradient-bottom');
+    this.videoTopLayer = this.videoData.wrapper.querySelector('.vplayer-top-layer');
+    this.videoTopGradient = this.videoData.wrapper.querySelector('.vplayer-gradient-top');
   },
 
   /**
@@ -217,17 +227,36 @@ const fullScreenControls = {
    */
   toggleFullScreen(fullScreen) {
     this.isVideoFullScreen = fullScreen;
-    if (fullScreen) {
-      videoData.wrapper.classList.add('fs-mode');
-    } else {
-      videoData.wrapper.classList.remove('fs-mode');
+    let videoModalElem = null;
+    if (this.videoData.config.isModal) {
+      videoModalElem = document.querySelector(`.${this.videoData.config.modalClass}`);
     }
+
+    if (fullScreen) {
+      this.videoData.wrapper.classList.add('fs-mode');
+      if (this.videoData.config.isModal) {
+        videoModalElem.classList.add('vplayer-modal--fs-mode');
+      }
+    } else {
+      this.videoData.wrapper.classList.remove('fs-mode');
+      if (this.videoData.config.isModal) {
+        videoModalElem.classList.remove('vplayer-modal--fs-mode');
+      }
+    }
+
+    // if (this.videoData.videoEl.requestFullScreen) {
+  	// 	this.videoData.videoEl.requestFullScreen();
+  	// } else if (this.videoData.videoEl.webkitRequestFullScreen) {
+  	// 	this.videoData.videoEl.webkitRequestFullScreen();
+  	// } else if (this.videoData.videoEl.mozRequestFullScreen) {
+  	// 	this.videoData.videoEl.mozRequestFullScreen();
+  	// }
+
     this.fullScreenBtnHandler(fullScreen);
   },
 
   /**
    * fullScreenBtnHandler - Modify the full screen btn ui
-   * TODO: Title Support to be added
    * @param  {bool} fullScreen - true/false sets the respective icon
    */
   fullScreenBtnHandler: function(fullScreen) {
@@ -256,7 +285,7 @@ const progressBarControls = {
   scrubbingMouseDownEvent: null,
 
   init() {
-    this.progressHolder = videoData.wrapper.querySelector(".vplayer-progress-bar");
+    this.progressHolder = this.videoData.wrapper.querySelector(".vplayer-progress-bar");
     this.progressContainer = this.progressHolder.querySelector('.vplayer-progress-bar-container');
     this.playProgressBar = this.progressHolder.querySelector(".vplayer-play-progress");
     this.scrubberContainer = this.progressHolder.querySelector(".vplayer-scrubber-container");
@@ -278,7 +307,7 @@ const progressBarControls = {
   },
 
   updatePlayProgress() {
-    let playerPos = ((videoData.videoEl.currentTime / videoData.videoEl.duration) * (this.progressHolder.offsetWidth));
+    let playerPos = ((this.videoData.videoEl.currentTime / this.videoData.videoEl.duration) * (this.progressHolder.offsetWidth));
     this.playProgressBar.style.width = playerPos + "px";
     this.scrubberContainer.style.transform = 'translateX(' + (playerPos) + 'px)';
   },
@@ -296,7 +325,7 @@ const progressBarControls = {
         document.onmouseup = null;
         document.onmousemove = null;
 
-        // videoData.videoEl.play();
+        // this.videoData.videoEl.play();
         this.setPlayProgress(e.pageX);
         this.startTrackPlayProgress();
       }
@@ -305,7 +334,7 @@ const progressBarControls = {
 
   setPlayProgress(clickX) {
     var newVal = Math.max(0, Math.min(1, (clickX - this.findPosX(this.progressHolder)) / this.progressHolder.offsetWidth));
-    videoData.videoEl.currentTime = newVal * videoData.videoEl.duration;
+    this.videoData.videoEl.currentTime = newVal * this.videoData.videoEl.duration;
     this.playProgressBar.style.width = newVal * (this.progressHolder.offsetWidth)  + "px";
   },
 
@@ -319,9 +348,9 @@ const progressBarControls = {
 
   loadProgress() {
     let range = 0;
-    let bf = videoData.videoEl.buffered;
-    let time = videoData.videoEl.currentTime;
-    let duration = videoData.videoEl.duration;
+    let bf = this.videoData.videoEl.buffered;
+    let time = this.videoData.videoEl.currentTime;
+    let duration = this.videoData.videoEl.duration;
 
     while(!(bf.start(range) <= time && time <= bf.end(range))) {
       range += 1;
@@ -330,11 +359,13 @@ const progressBarControls = {
     let loadEndPercentage = bf.end(range) / duration;
     let loadPercentage = parseFloat((loadEndPercentage - loadStartPercentage).toFixed(2)) * 100;
 
-    let loadProgress = this.loadProgressBar || videoData.wrapper.querySelector('.vplayer-load-progress');
+    let loadProgress = this.loadProgressBar || this.videoData.wrapper.querySelector('.vplayer-load-progress');
     loadProgress.style.width = `${loadPercentage}%`;
   },
 
   destroy() {
+    // this.stopTrackPlayProgress();
+    // this.loadProgress = () => {};
     this.progressHolder.removeEventListener("mousedown", this.scrubbingMouseDownEvent);
     this.scrubbingMouseDownEvent = null;
   }
@@ -350,9 +381,9 @@ const volumeControls = {
   volumeSliderObj: null,
 
   init() {
-    this.volumeBtn = videoData.wrapper.querySelector('.vplayer-btn--volume').parentNode;
-    this.controlsElem = videoData.wrapper.querySelector('.vplayer-controls');
-    this.volumePanel = videoData.wrapper.querySelector('.vplayer-volume-panel');
+    this.volumeBtn = this.videoData.wrapper.querySelector('.vplayer-btn--volume').parentNode;
+    this.controlsElem = this.videoData.wrapper.querySelector('.vplayer-controls');
+    this.volumePanel = this.videoData.wrapper.querySelector('.vplayer-volume-panel');
 
     this.initializeVolumeSlider();
   },
@@ -377,8 +408,8 @@ const volumeControls = {
    */
   toggleMuted() {
     this.isMuted = !this.isMuted;
-    videoData.videoEl.muted = this.isMuted;
-    let vol = this.isMuted ? 0 : videoData.videoEl.volume * 100;
+    this.videoData.videoEl.muted = this.isMuted;
+    let vol = this.isMuted ? 0 : this.videoData.videoEl.volume * 100;
     let volSliderDrag = this.volumeBtn.querySelector('.vplayer-volume-slider-handle');
     if (this.isMuted) {
       this.volumeSliderObj = {
@@ -429,8 +460,8 @@ const volumeControls = {
     } else {
       this.isMuted = false;
     }
-    videoData.videoEl.volume = this.volume;
-    videoData.videoEl.muted = this.isMuted;
+    this.videoData.videoEl.volume = this.volume;
+    this.videoData.videoEl.muted = this.isMuted;
     this.volumeBtnHandler(volume);
   },
 
@@ -439,7 +470,7 @@ const volumeControls = {
     let svgNormalVolume = '<svg height=100% viewBox="0 0 36 36"width=100%><use class=vplayer-svg-shadow xlink:href=""></use><use class=vplayer-svg-shadow xlink:href=""></use><defs><clipPath id=vplayer-svg-volume-animation-mask><path d="m 14.35,-0.14 -5.86,5.86 20.73,20.78 5.86,-5.91 z"></path><path d="M 7.07,6.87 -1.11,15.33 19.61,36.11 27.80,27.60 z"></path><path d="M 9.09,5.20 6.47,7.88 26.82,28.77 29.66,25.99 z"class=vplayer-svg-volume-animation-mover transform="translate(0, 0)"></path></clipPath><clipPath id=vplayer-svg-volume-animation-slash-mask><path d="m -11.45,-15.55 -4.44,4.51 20.45,20.94 4.55,-4.66 z"class=vplayer-svg-volume-animation-mover transform="translate(0, 0)"></path></clipPath></defs><path d="M8,21 L12,21 L17,26 L17,10 L12,15 L8,15 L8,21 Z M19,14 L19,22 C20.48,21.32 21.5,19.77 21.5,18 C21.5,16.26 20.48,14.74 19,14 Z"class="vplayer-svg-fill vplayer-svg-volume-animation-speaker"clip-path=url(#vplayer-svg-volume-animation-mask) fill=#fff></path><path d="M 9.25,9 7.98,10.27 24.71,27 l 1.27,-1.27 Z"class="vplayer-svg-fill vplayer-svg-volume-animation-hider"clip-path=url(#vplayer-svg-volume-animation-slash-mask) fill=#fff style=display:none></path></svg>';
     let svgFullVolume = '<svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%"><use class="ytp-svg-shadow" xlink:href="#ytp-id-14"></use><use class="ytp-svg-shadow" xlink:href="#ytp-id-15"></use><defs><clipPath id="ytp-svg-volume-animation-mask"><path d="m 14.35,-0.14 -5.86,5.86 20.73,20.78 5.86,-5.91 z"></path><path d="M 7.07,6.87 -1.11,15.33 19.61,36.11 27.80,27.60 z"></path><path class="ytp-svg-volume-animation-mover" d="M 9.09,5.20 6.47,7.88 26.82,28.77 29.66,25.99 z" transform="translate(0, 0)"></path></clipPath><clipPath id="ytp-svg-volume-animation-slash-mask"><path class="ytp-svg-volume-animation-mover" d="m -11.45,-15.55 -4.44,4.51 20.45,20.94 4.55,-4.66 z" transform="translate(0, 0)"></path></clipPath></defs><path class="ytp-svg-fill ytp-svg-volume-animation-speaker" clip-path="url(#ytp-svg-volume-animation-mask)" d="M8,21 L12,21 L17,26 L17,10 L12,15 L8,15 L8,21 Z M19,14 L19,22 C20.48,21.32 21.5,19.77 21.5,18 C21.5,16.26 20.48,14.74 19,14 ZM19,11.29 C21.89,12.15 24,14.83 24,18 C24,21.17 21.89,23.85 19,24.71 L19,26.77 C23.01,25.86 26,22.28 26,18 C26,13.72 23.01,10.14 19,9.23 L19,11.29 Z" fill="#fff" id="ytp-id-14"></path><path class="ytp-svg-fill ytp-svg-volume-animation-hider" clip-path="url(#ytp-svg-volume-animation-slash-mask)" d="M 9.25,9 7.98,10.27 24.71,27 l 1.27,-1.27 Z" fill="#fff" id="ytp-id-15" style="display: none;"></path></svg>';
 
-    let svgVolumeBtn = videoData.wrapper.querySelector('.vplayer-btn--volume');
+    let svgVolumeBtn = this.videoData.wrapper.querySelector('.vplayer-btn--volume');
     let svg = svgVolumeBtn.querySelector('svg');
 
     svg.parentNode.removeChild(svg);
@@ -464,23 +495,23 @@ const timerInfo = {
   durationEl: null,
 
   init() {
-    this.timeDisplay = videoData.wrapper.querySelector('.vplayer-time-display');
-    this.currentTimeEl = videoData.wrapper.querySelector('.vplayer-time-current');
-    this.durationEl = videoData.wrapper.querySelector('.vplayer-time-duration');
+    this.timeDisplay = this.videoData.wrapper.querySelector('.vplayer-time-display');
+    this.currentTimeEl = this.videoData.wrapper.querySelector('.vplayer-time-current');
+    this.durationEl = this.videoData.wrapper.querySelector('.vplayer-time-duration');
     this.updateVideoDuration();
   },
 
   updateTime() {
-    let currentMin = parseInt(videoData.videoEl.currentTime / 60, 10);
-    let currentSec = parseInt(videoData.videoEl.currentTime % 60, 10);
+    let currentMin = parseInt(this.videoData.videoEl.currentTime / 60, 10);
+    let currentSec = parseInt(this.videoData.videoEl.currentTime % 60, 10);
 
     currentSec = currentSec < 10 ? ('0' + currentSec) : currentSec;
     this.currentTimeEl.innerHTML = currentMin + ':' + currentSec;
   },
 
   updateVideoDuration() {
-    let durationMin = parseInt(videoData.videoEl.duration / 60, 10);
-    let durationSec = parseInt(videoData.videoEl.duration % 60, 10);
+    let durationMin = parseInt(this.videoData.videoEl.duration / 60, 10);
+    let durationSec = parseInt(this.videoData.videoEl.duration % 60, 10);
 
     durationSec = durationSec < 10 ? ('0' + durationSec) : durationSec;
     this.durationEl.innerHTML = durationMin + ':' + durationSec;
@@ -498,18 +529,18 @@ const customTracksControls = {
   cueChangeEvents: null,
 
   init() {
-    this.captionBtn = videoData.wrapper.querySelector('.vplayer-btn--subtitles');
-    this.trackEl = videoData.wrapper.querySelector('.vplayer-track');
-    this.allTrackEl = videoData.wrapper.querySelectorAll('.vplayer-track');
-    this.captionBlock = videoData.wrapper.querySelector('.caption-block');
-    this.captionWindow = videoData.wrapper.querySelector('.caption-window');
-    this.isCaptionEnabled = videoData.config.enableCaptions;
+    this.captionBtn = this.videoData.wrapper.querySelector('.vplayer-btn--subtitles');
+    this.trackEl = this.videoData.wrapper.querySelector('.vplayer-track');
+    this.allTrackEl = this.videoData.wrapper.querySelectorAll('.vplayer-track');
+    this.captionBlock = this.videoData.wrapper.querySelector('.caption-block');
+    this.captionWindow = this.videoData.wrapper.querySelector('.caption-window');
+    this.isCaptionEnabled = this.videoData.config.enableCaptions;
     this.captionBtn.setAttribute('aria-pressed', this.isCaptionEnabled);
 
     if (this.trackEl) {
       this.toggleCaptionBtnState(false);
 
-      videoData.videoEl.textTracks.forEach((textTrack) => {
+      this.videoData.videoEl.textTracks.forEach((textTrack) => {
         textTrack.mode = 'hidden';
       });
 
@@ -543,7 +574,7 @@ const customTracksControls = {
   },
 
   createTracks() {
-    let currentTrack = videoData.videoEl.parentNode.querySelector('track.vplayer-track--default');
+    let currentTrack = this.videoData.videoEl.parentNode.querySelector('track.vplayer-track--default');
 
     if (currentTrack !== null) {
       currentTrack.track.mode = 'hidden';
@@ -561,7 +592,7 @@ const customTracksControls = {
   },
 
   removeTracks() {
-    let currentTrack = videoData.videoEl.parentNode.querySelector('track.vplayer-track--default');
+    let currentTrack = this.videoData.videoEl.parentNode.querySelector('track.vplayer-track--default');
 
     if (currentTrack !== null) {
       this.showCustomTracks(false);
@@ -587,7 +618,7 @@ const customTracksControls = {
     // disable the CC btn
     this.toggleCaptionBtnState(true);
 
-    let currentTrack = videoData.videoEl.parentNode.querySelector('track.vplayer-track');
+    let currentTrack = this.videoData.videoEl.parentNode.querySelector('track.vplayer-track');
 
     if (currentTrack && currentTrack.track) {
       currentTrack.track.removeEventListener('cuechange', this.cueChangeEvents, false);
@@ -609,31 +640,38 @@ const settingsControls = {
   settingsObj: null,
   isLanguagePresent: false,
   panelHeaderClickEvent: null,
+  menuClickEvent: null,
 
   init() {
-    this.settingsBtn = videoData.wrapper.querySelector('.vplayer-btn--settings');
-    this.settingsPopupEl = videoData.wrapper.querySelector('.vplayer-settings-menu');
+    this.settingsBtn = this.videoData.wrapper.querySelector('.vplayer-btn--settings');
+    this.settingsPopupEl = this.videoData.wrapper.querySelector('.vplayer-settings-menu');
 
     this.buildSettingsMainMenu();
   },
 
-  animateSettingsBtn() {
+  isSettingsViewVisible() {
     let state = this.settingsBtn.getAttribute('aria-expanded');
-    if (state && state === 'true') {
+    return state && state === 'true'
+  },
+
+  toggleSettingsView() {
+    if (this.isSettingsViewVisible()) {
       this.settingsBtn.setAttribute('aria-expanded', false);
     } else {
       this.settingsBtn.setAttribute('aria-expanded', true);
     }
-    this.toggleSettingsPopup();
-  },
-
-  toggleSettingsPopup() {
+    // toggle menu visibility
     if (!this.isShow) {
       this.settingsPopupEl.removeAttribute('aria-hidden');
-      this.initSettingsMenuEvents();
     } else {
       this.settingsPopupEl.setAttribute('aria-hidden', true);
-      this.destroySettingsMenuEvents();
+    }
+
+    // Add height restriction
+    if (this.videoData.wrapper.offsetWidth < 600) {
+      this.settingsPopupEl.classList.add('vplayer-settings-menu--restrict');
+    } else {
+      this.settingsPopupEl.classList.remove('vplayer-settings-menu--restrict');
     }
 
     this.isShow = !this.isShow;
@@ -658,7 +696,6 @@ const settingsControls = {
       }
       return item;
     });
-
     if (currentVideo.hasOwnProperty('lang')) {
       this.isLanguagePresent = true;
       let languages = {
@@ -668,24 +705,25 @@ const settingsControls = {
         options: []
       };
       currentVideo.lang.forEach((item) => {
+        let playingState = (item.language === String(config.lang)) || false;
         languages.options.push({
           'label': item.language.toUpperCase(),
           'value': item.language,
-          'selected': item.default
+          'selected': playingState
         });
       });
       modifiedSettings = modifiedSettings.filter(i => i.label !== 'lang');
       modifiedSettings.push(languages);
     }
-    videoData.config.settings = modifiedSettings;
+    this.videoData.config.settings = modifiedSettings;
     this.settingsObj = modifiedSettings;
     return this.settingsObj;
   },
 
   buildSettingsMainMenu() {
-    this.buildSettingsObj(videoData.config, videoData.currentVideo);
+    this.buildSettingsObj(this.videoData.config, this.videoData.currentVideo);
     this.settingsPopupEl.innerHTML = '';
-    ui.buildSettingsMenu(this.settingsObj, this.settingsPopupEl);
+    this.videoData.ui.buildSettingsMenu(this.settingsObj, this.settingsPopupEl);
   },
 
   checkboxToggle(target, attr) {
@@ -697,7 +735,7 @@ const settingsControls = {
       });
       currentSettingsObj.value = !isChecked;
 
-      videoData.config[attr] = !isChecked;
+      this.videoData.config[attr] = !isChecked;
     }
   },
 
@@ -707,9 +745,7 @@ const settingsControls = {
         return item.label === attr;
       });
       this.settingsPopupEl.innerHTML = '';
-      ui.buildSettingsMenuOptions(currentSettingsObj.options, this.settingsPopupEl, currentSettingsObj.title, attr);
-      this.destroySettingsMenuEvents();
-      this.initSettingsMenuEvents();
+      this.videoData.ui.buildSettingsMenuOptions(currentSettingsObj.options, this.settingsPopupEl, currentSettingsObj.title, attr);
     }
   },
 
@@ -717,6 +753,14 @@ const settingsControls = {
     if (target !== null) {
       let isChecked = (target.getAttribute('aria-checked') === 'true');
       target.setAttribute('aria-checked', !isChecked);
+
+      let otherChildrenElems = target.parentElement.children;
+      for (var child = 0; child < otherChildrenElems.length; child++) {
+        if (target !== otherChildrenElems[child]) {
+          otherChildrenElems[child].setAttribute('aria-checked', false);
+        }
+      }
+
       let parentAttr = target.getAttribute('data-parent-attr');
       let currentSettingsObj = this.settingsObj.find((item) => {
         return item.label === parentAttr;
@@ -730,93 +774,80 @@ const settingsControls = {
           item.selected = false;
         }
       });
-      if (videoData.config.hasOwnProperty(parentAttr)) {
-        videoData.config[parentAttr] = valueAttr;
+      if (this.videoData.config.hasOwnProperty(parentAttr)) {
+        this.videoData.config[parentAttr] = valueAttr;
       }
       this.backToSettingsMainMenu();
     }
   },
 
   backToSettingsMainMenu() {
-    this.destroySettingsMenuEvents();
     this.buildSettingsMainMenu();
-    this.initSettingsMenuEvents();
   },
 
-  initSettingsMenuEvents() {
-    let menus = this.settingsPopupEl.querySelectorAll('.vplayer-menu-item');
-    menus.forEach((menu) => {
-      menu.addEventListener('click',  menu.menuClickEvent = (e) => {
-        let currentTarget = e.currentTarget;
-        this.handleMenuEvents(currentTarget);
-      }, true);
-    });
-
-    let panelHeader = this.settingsPopupEl.querySelector('.vplayer-panel-header');
-    if (panelHeader !== null) {
-      panelHeader.addEventListener('click', this.panelHeaderClickEvent = (e) => {
-        this.backToSettingsMainMenu();
-      }, true);
-    }
-  },
-
-  handleMenuEvents(target) {
+  handleSettingsMenuEvents(target) {
+    let currentTarget = target.closest('.vplayer-menu-item') || target.closest('.vplayer-panel-header');
     let attr;
-    if (target.getAttribute('data-attr') !== null) {
-      attr = target.getAttribute('data-attr');
+    if (currentTarget.getAttribute('data-attr') !== null) {
+      attr = currentTarget.getAttribute('data-attr');
     } else {
       attr = '';
     }
-
     switch (attr) {
       case 'autoplay':
-        this.checkboxToggle(target, attr);
-        playPausebtnControls.onAutoPlay();
+        this.checkboxToggle(currentTarget, attr);
+        this.eventObj.playPausebtnControls.onAutoPlay();
         break;
 
       case 'speed':
-        this.showDropdownOpt(target, attr);
+        this.showDropdownOpt(currentTarget, attr);
         break;
 
       case 'speed-options':
-        let val = target.getAttribute('data-value');
-        this.selectMenuOption(target, attr);
-        speedControls.trigger(parseFloat(val));
+        var val = currentTarget.getAttribute('data-value');
+        this.selectMenuOption(currentTarget, attr);
+        this.toggleSettingsView();
+        this.eventObj.speedControls.trigger(parseFloat(val));
+        break;
+
+      case 'speed-options-header':
+        this.backToSettingsMainMenu();
         break;
 
       case 'lang':
-        this.showDropdownOpt(target, attr);
+        this.showDropdownOpt(currentTarget, attr);
         break;
 
       case 'lang-options':
-        // let val = target.getAttribute('data-value');
-        this.selectMenuOption(target, attr);
-        // speedControls.trigger(parseFloat(val));
+        var val = currentTarget.getAttribute('data-value');
+        this.selectMenuOption(currentTarget, attr);
+        this.toggleSettingsView();
+        this.changeLanguage(val);
+        break;
+
+      case 'lang-options-header':
+        this.backToSettingsMainMenu();
         break;
 
     }
   },
 
-  destroySettingsMenuEvents() {
-    let menus = this.settingsPopupEl.querySelectorAll('.vplayer-menu-item-content');
-    menus.forEach((menu) => {
-      menu.removeEventListener("click", menu.menuClickEvent, true);
-      menu.menuClickEvent = null;
-    });
-
-    let panelHeader = this.settingsPopupEl.querySelector('.vplayer-panel-header');
-    if (panelHeader !== null) {
-      panelHeader.removeEventListener('click', this.panelHeaderClickEvent, true);
-    }
+  changeLanguage(language) {
+    let currentVideo = this.videoData.currentVideo;
+    let videoLangObjToBePlayed = currentVideo.lang.find((item) => { return item.language === language; });
+    let currentLangPlaying = currentVideo.lang.find((item) => { return item.playingState; });
+    currentLangPlaying.playingState = false;
+    videoLangObjToBePlayed.playingState = true;
+    this.eventObj.addVideoData();
   }
 }
 
 const keyboardEvents = {
   init() {
     document.addEventListener('keydown', this.keyEvents = (e) => {
-      this.onKeyPress(event, 32, playPausebtnControls, 'togglePlayPause');
-      this.onKeyPress(event, 27, fullScreenControls, 'toggleFullScreen', false);
-      this.onKeyPress(event, 77, volumeControls, 'toggleMuted', false);
+      this.onKeyPress(event, 32, this.eventObj.playPausebtnControls, 'togglePlayPause');
+      this.onKeyPress(event, 27, this.eventObj.fullScreenControls, 'toggleFullScreen', false);
+      this.onKeyPress(event, 77, this.eventObj.volumeControls, 'toggleMuted', false);
     }, false);
   },
 
@@ -850,7 +881,8 @@ const toolTipControls = {
   toolTipInfoTitle: null,
 
   init() {
-    this.toolTipWrapper = videoData.wrapper.querySelector('.vplayer-tooltip-wrapper');
+    this.toolTipWrapper = this.videoData.wrapper.querySelector('.vplayer-tooltip-wrapper');
+
     this.toolTipBgImageEl = this.toolTipWrapper.querySelector('.vplayer-tooltip-bg-image');
     this.toolTipInfoEl = this.toolTipWrapper.querySelector('.vplayer-tooltip-info-wrapper');
     this.toolTipBgDuration = this.toolTipBgImageEl.querySelector('.vplayer-tooltip-bg-duration');
@@ -860,9 +892,9 @@ const toolTipControls = {
 
   positionToolTip(eventType) {
     if (eventType === 'next' || eventType === 'prev') {
-      let control = videoData.wrapper.querySelector('.vplayer-bottom-layer');
-      let prevBtn = prevNextbtnControls.prevBtn;
-      let nextBtn = prevNextbtnControls.nextBtn;
+      let control = this.videoData.wrapper.querySelector('.vplayer-bottom-layer');
+      let prevBtn = this.eventObj.prevNextbtnControls.prevBtn;
+      let nextBtn = this.eventObj.prevNextbtnControls.nextBtn;
       let controlBoundaries = control.getBoundingClientRect();
 
       let toolTipBoundaries = {
@@ -870,7 +902,7 @@ const toolTipControls = {
         height: this.toolTipWrapper.offsetHeight
       };
 
-      let wrapperBoundaries = videoData.wrapper.getBoundingClientRect();
+      let wrapperBoundaries = this.videoData.wrapper.getBoundingClientRect();
       let left = 0;
       if (eventType === 'next') {
         left = nextBtn.offsetLeft;
@@ -939,8 +971,8 @@ const bookmarkControls = {
   bookmarkBtn: null,
 
   init() {
-    this.bookmarkBtn = videoData.wrapper.querySelector('.vplayer-btn--bookmarks');
-    if (videoData.config.bookmarkURL && videoData.config.bookmarkURL !== '') {
+    this.bookmarkBtn = this.videoData.wrapper.querySelector('.vplayer-btn--bookmarks');
+    if (this.videoData.config.bookmarkURL && this.videoData.config.bookmarkURL !== '') {
       this.toggleBookmarkBtnVisiblity(true);
     } else {
       this.toggleBookmarkBtnVisiblity(false);
@@ -982,22 +1014,22 @@ const playListControls = {
   drawerCloseEvent: null,
 
   init() {
-    this.playListBtn = videoData.wrapper.querySelector('.vplayer-btn--cards');
-    this.drawerEl = videoData.wrapper.querySelector('.vplayer-drawer');
+    this.playListBtn = this.videoData.wrapper.querySelector('.vplayer-btn--cards');
+    this.drawerEl = this.videoData.wrapper.querySelector('.vplayer-drawer');
     this.drawerHeader = this.drawerEl.querySelector('.vplayer-drawer-header');
     this.drawerHeaderText = this.drawerHeader.querySelector('.vplayer-drawer-header-text');
     this.drawerClose = this.drawerHeader.querySelector('.vplayer-drawer-btn--close');
     this.drawerContent = this.drawerEl.querySelector('.vplayer-drawer-content');
 
 
-    if (videoData.videoList.length > 1) {
+    if (this.videoData.videoList.length > 1) {
       this.togglePlayListBtnVisibility(true);
     } else {
       this.togglePlayListBtnVisibility(false);
     }
     this.drawerHeaderText.innerText = 'Playlist';
 
-    ui.buildPlayListCards(videoData.videoList, this.drawerContent);
+    this.videoData.ui.buildPlayListCards(this.videoData.videoList, this.drawerContent);
   },
 
   togglePlayListBtnVisibility(enable) {
@@ -1013,7 +1045,7 @@ const playListControls = {
   togglePlayListView(enable) {
     if (enable) {
       this.toggleWrapperClass(true);
-      view.toggleInfoLayers(videoData.wrapper, false);
+      view.toggleInfoLayers(this.videoData.wrapper, false);
       this.togglePlayListBtnVisibility(false);
       this.drawerEl.removeAttribute('aria-hidden');
       this.drawerEl.classList.add('vplayer-drawer--open');
@@ -1021,7 +1053,7 @@ const playListControls = {
     } else {
       this.destroyCardEvents();
       this.toggleWrapperClass(false);
-      view.toggleInfoLayers(videoData.wrapper, true);
+      view.toggleInfoLayers(this.videoData.wrapper, true);
       this.drawerEl.classList.remove('vplayer-drawer--open');
       this.drawerEl.setAttribute('aria-hidden', true);
       this.togglePlayListBtnVisibility(true);
@@ -1030,19 +1062,19 @@ const playListControls = {
 
   toggleWrapperClass(add){
     if (add) {
-      videoData.wrapper.classList.add('playlist-open');
+      this.videoData.wrapper.classList.add('playlist-open');
     } else {
-      videoData.wrapper.classList.remove('playlist-open');
+      this.videoData.wrapper.classList.remove('playlist-open');
     }
   },
 
   directPlayVideo(videoId) {
-    let videoToBePlayed = videoData.videoList.find((item) => { return item.id === videoId; });
-    setNonPlayingState();
-    videoData.currentVideo = videoToBePlayed;
-    videoData.currentVideo.state = 'playing';
+    let videoToBePlayed = this.videoData.videoList.find((item) => { return item.id === videoId; });
+    setNonPlayingState(this.videoData);
+    this.videoData.currentVideo = videoToBePlayed;
+    this.videoData.currentVideo.state = 'playing';
     this.togglePlayListView(false);
-    events.addVideoData();
+    this.eventObj.addVideoData();
   },
 
   initCardEvents() {
@@ -1067,8 +1099,12 @@ const playListControls = {
 };
 
 const speedControls = {
+  // init() {
+  //
+  // },
+
   trigger(speed) {
-    videoData.videoEl.playbackRate = speed;
+    this.videoData.videoEl.playbackRate = speed;
   }
 };
 
@@ -1179,57 +1215,77 @@ const ajax = {
   }
 };
 
-const events = {
-  init(eventsObj) {
-    videoData = eventsObj;
+class VplayerEvents {
+  constructor(options) {
+    this.videoData = options;
+  }
+
+  init() {
     this.addVideoData();
     this.initVideoBeforeLoadEvents();
-  },
+  }
 
   addVideoData() {
-    if (videoData.currentVideo) {
-      ui.addVideoAttrs(videoData.currentVideo, videoData.videoEl);
-      ui.setPrevNextBtnStates(videoData.videoList);
+    if (this.videoData.currentVideo) {
+      this.videoData.ui.addVideoAttrs(this.videoData.currentVideo, this.videoData.videoEl, this.videoData.config);
+      this.videoData.ui.setPrevNextBtnStates(this.videoData.videoList);
     }
-  },
+  }
 
   initVideoBeforeLoadEvents() {
-    let video = videoData.videoEl;
+    let video = this.videoData.videoEl;
     if (video) {
       let events = ['loadeddata', 'loadedmetadata'];
       events.forEach(evt => video.addEventListener(evt, this, false));
     }
-  },
+  }
+
+  initControlsWithRef() {
+    let dataObj = {'videoData': this.videoData, 'eventObj': this};
+    this.playPausebtnControls = Object.assign({}, playPausebtnControls, dataObj);
+    this.prevNextbtnControls = Object.assign({}, prevNextbtnControls, dataObj);
+    this.fullScreenControls = Object.assign({}, fullScreenControls, dataObj);
+    this.volumeControls = Object.assign({}, volumeControls, dataObj);
+    this.progressBarControls = Object.assign({}, progressBarControls, dataObj);
+    this.timerInfo = Object.assign({}, timerInfo, dataObj);
+    this.settingsControls = Object.assign({}, settingsControls, dataObj);
+    this.keyboardEvents = Object.assign({}, keyboardEvents, dataObj);
+    this.toolTipControls = Object.assign({}, toolTipControls, dataObj);
+    this.bookmarkControls = Object.assign({}, bookmarkControls, dataObj);
+    this.playListControls = Object.assign({}, playListControls, dataObj);
+    this.speedControls = Object.assign({}, speedControls, dataObj);
+  }
 
   initControls() {
-    playPausebtnControls.init();
-    prevNextbtnControls.init();
-    fullScreenControls.init();
-    volumeControls.init();
-    progressBarControls.init();
-    timerInfo.init();
-    settingsControls.init();
-    keyboardEvents.init();
-    toolTipControls.init();
-    bookmarkControls.init();
-    playListControls.init();
+    this.playPausebtnControls.init();
+    this.prevNextbtnControls.init();
+    this.fullScreenControls.init();
+    this.volumeControls.init();
+    this.progressBarControls.init();
+    this.timerInfo.init();
+    this.settingsControls.init();
+    this.keyboardEvents.init();
+    this.toolTipControls.init();
+    this.bookmarkControls.init();
+    this.playListControls.init();
+    //this.speedControls.init();
 
-    if (videoData.config.autoplay) {
-      playPausebtnControls.onAutoPlay(true)
+    if (this.videoData.config.autoplay) {
+      this.playPausebtnControls.onAutoPlay(true)
     } else {
-      playPausebtnControls.playBtnUIHandler('play');
+      this.playPausebtnControls.playBtnUIHandler('play');
     }
 
     this.initVideoAfterLoadEvents();
-  },
+  }
 
   initVideoAfterLoadEvents() {
     let videoElementEvents = ['play', 'pause', 'ended', 'timeupdate', 'progress'];
-    videoElementEvents.forEach(evt => videoData.videoEl.addEventListener(evt, this, false));
+    videoElementEvents.forEach(evt => this.videoData.videoEl.addEventListener(evt, this, false));
 
     let wrapperEvents = ['click', 'mouseover', 'mouseout', 'dblclick'];
-    wrapperEvents.forEach(evt => videoData.wrapper.addEventListener(evt, this, false));
-  },
+    wrapperEvents.forEach(evt => this.videoData.wrapper.addEventListener(evt, this, false));
+  }
 
   handleEvent(evt) {
     let handler = `on${evt.type}Event`;
@@ -1237,151 +1293,169 @@ const events = {
       evt.preventDefault();
       return this[handler](evt);
     }
-  },
+  }
 
   onloadeddataEvent(event) {
     let video = event.target;
     if (video.readyState >= 2) {
       console.log('onloadeddataEvent video ready');
-      events.initControls();
+      this.initControlsWithRef();
+      this.initControls();
     }
-  },
+  }
 
   onloadedmetadataEvent() {
     console.log('onloadedmetadataEvent');
-    customTracksControls.init();
-  },
+    let dataObj = {'videoData': this.videoData, 'eventObj': this};
+    this.customTracksControls = Object.assign({}, customTracksControls, dataObj);
+    this.customTracksControls.init();
+  }
 
   onmouseoverEvent(event) {
     let target = event.target;
 
-    if (target === prevNextbtnControls.nextBtn) {
+    if (target === this.prevNextbtnControls.nextBtn) {
       if (!target.classList.contains('vplayer-btn--disabled')) {
-        prevNextbtnControls.previewVideo('next');
+        this.prevNextbtnControls.previewVideo('next');
       }
-    } else if (target === prevNextbtnControls.prevBtn) {
+    } else if (target === this.prevNextbtnControls.prevBtn) {
       if (!target.classList.contains('vplayer-btn--disabled')) {
-        prevNextbtnControls.previewVideo('prev');
+        this.prevNextbtnControls.previewVideo('prev');
       }
     } else if (target.closest('.vplayer-volume-btn-wrapper') !== null) {
-      volumeControls.volumeHoverEffects(true);
+      this.volumeControls.volumeHoverEffects(true);
     }
 
-    if (target === videoData.videoEl || target.closest('.vplayer-bottom-layer') !== null || target.closest('.vplayer-wrapper') !== null || target === videoData.wrapper) {
-      if (view.canStateChange(view.mouseOverViewClasses)) {
-        view.toggleInfoLayers(videoData.wrapper, true);
+    if (target === this.videoData.videoEl || target.closest('.vplayer-bottom-layer') !== null || target.closest('.vplayer-wrapper') !== null || target === this.videoData.wrapper) {
+      if (view.canStateChange(this.videoData.wrapper, view.mouseOverViewClasses)) {
+        view.toggleInfoLayers(this.videoData.wrapper, true);
       }
     }
-  },
+  }
 
   onmouseoutEvent(event) {
     let target = event.target;
 
-    if (target === prevNextbtnControls.nextBtn) {
-      prevNextbtnControls.closePreview();
-    } else if (target === prevNextbtnControls.prevBtn) {
-      prevNextbtnControls.closePreview();
+    if (target === this.prevNextbtnControls.nextBtn) {
+      this.prevNextbtnControls.closePreview();
+    } else if (target === this.prevNextbtnControls.prevBtn) {
+      this.prevNextbtnControls.closePreview();
     } else if (target.closest('.vplayer-volume-btn-wrapper') !== null) {
-      volumeControls.volumeHoverEffects(false);
+      this.volumeControls.volumeHoverEffects(false);
     }
 
-    if (target === videoData.videoEl || target.closest('.vplayer-bottom-layer') !== null || target.closest('.vplayer-wrapper') !== null || target === videoData.wrapper) {
-      if (view.canStateChange(view.mouseOutViewClasses)) {
-        view.toggleInfoLayers(videoData.wrapper, false);
+    if (target === this.videoData.videoEl || target.closest('.vplayer-bottom-layer') !== null || target.closest('.vplayer-wrapper') !== null || target === this.videoData.wrapper) {
+      if (view.canStateChange(this.videoData.wrapper, view.mouseOutViewClasses)) {
+        view.toggleInfoLayers(this.videoData.wrapper, false);
       }
     }
-  },
+  }
 
   onclickEvent(event) {
     let target = event.target;
     console.log('on click event', target);
-    if (target === prevNextbtnControls.nextBtn) {
-      prevNextbtnControls.playNextVideo();
-    } else if (target === prevNextbtnControls.prevBtn) {
-      prevNextbtnControls.playPrevVideo();
-    } else if (target === fullScreenControls.fullScreenBtn) {
-      fullScreenControls.fullScreenClickHandler();
+
+    if (this.settingsControls.isSettingsViewVisible() && target !== this.settingsControls.settingsBtn && target.closest('.vplayer-settings-menu') === null) {
+      this.settingsControls.toggleSettingsView();
+    }
+
+    if (target === this.prevNextbtnControls.nextBtn) {
+      this.prevNextbtnControls.playNextVideo();
+    } else if (target === this.prevNextbtnControls.prevBtn) {
+      this.prevNextbtnControls.playPrevVideo();
+    } else if (target === this.fullScreenControls.fullScreenBtn) {
+      this.fullScreenControls.fullScreenClickHandler();
     } else if (target.closest('.vplayer-volume-btn-wrapper') !== null) {
-      volumeControls.toggleMuted();
-    } else if ((target === customTracksControls.captionBtn) && customTracksControls.trackEl) {
-      customTracksControls.toggleCaptioning();
-    } else if (target === settingsControls.settingsBtn) {
-      settingsControls.animateSettingsBtn();
-    } else if (target === bookmarkControls.bookmarkBtn) {
-      bookmarkControls.bookmarkRequest();
-    } else if (target === playListControls.playListBtn) {
-      playListControls.togglePlayListView(true);
-    } else if (target === playListControls.drawerClose) {
-      playListControls.togglePlayListView(false);
+      this.volumeControls.toggleMuted();
+    } else if ((target === this.customTracksControls.captionBtn) && this.customTracksControls.trackEl) {
+      this.customTracksControls.toggleCaptioning();
+    } else if (target === this.settingsControls.settingsBtn) {
+      this.settingsControls.toggleSettingsView();
+    } else if (target === this.bookmarkControls.bookmarkBtn) {
+      this.bookmarkControls.bookmarkRequest();
+    } else if (target === this.playListControls.playListBtn) {
+      this.playListControls.togglePlayListView(true);
+    } else if (target === this.playListControls.drawerClose) {
+      this.playListControls.togglePlayListView(false);
+    } else if (target.closest('.vplayer-settings-menu') !== null) {
+      this.settingsControls.handleSettingsMenuEvents(target);
     } else if (target.closest('.vplayer-progress-bar-wrapper') === null) {
       // Target should not be in scrubber and controls
       if (target.closest('.vplayer-bottom-layer') !== null || target.closest('.vplayer-gradient-bottom') !== null || target.closest('.vplayer-top-layer') !== null || target.closest('.vplayer-gradient-top') !== null ||
-      target.closest('.vplayer-container') !== null || target === playPausebtnControls.playBtn) {
-          playPausebtnControls.togglePlayPause();
+      target.closest('.vplayer-container') !== null || target === this.playPausebtnControls.playBtn) {
+          this.playPausebtnControls.togglePlayPause();
       }
     }
-  },
+  }
 
   onplayEvent(event) {
     let target = event.target;
 
     console.log('on play event of videoEl', target);
-    playPausebtnControls.playBtnUIHandler('pause');
-    videoData.wrapper.classList.remove('video-paused');
-    progressBarControls.startTrackPlayProgress();
-  },
+    this.playPausebtnControls.playBtnUIHandler('pause');
+    this.videoData.wrapper.classList.remove('video-paused');
+    this.progressBarControls.startTrackPlayProgress();
+  }
 
   onpauseEvent(event) {
     let target = event.target;
 
-    playPausebtnControls.playBtnUIHandler('play');
-    videoData.wrapper.classList.add('video-paused');
-    view.toggleInfoLayers(videoData.wrapper, true);
-    progressBarControls.stopTrackPlayProgress();
-  },
+    this.playPausebtnControls.playBtnUIHandler('play');
+    if (this.videoData.wrapper !== null) {
+      this.videoData.wrapper.classList.add('video-paused');
+    }
+    view.toggleInfoLayers(this.videoData.wrapper, true);
+    this.progressBarControls.stopTrackPlayProgress();
+  }
 
   onendedEvent(event) {
     let target = event.target;
 
     console.log('on ended event of videoEl', target);
 
-    playPausebtnControls.playBtnUIHandler('reload');
-    view.toggleInfoLayers(videoData.wrapper, true);
-    if (videoData.config.autoplay) {
+    this.playPausebtnControls.playBtnUIHandler('reload');
+    view.toggleInfoLayers(this.videoData.wrapper, true);
+    if (this.videoData.config.autoplay) {
       // Play Next Video
-      prevNextbtnControls.playNextVideo();
+      this.prevNextbtnControls.playNextVideo();
     }
-  },
+  }
 
   ondblclickEvent(event) {
     let target = event.target;
     console.log('on double click event', target);
 
-    if (target === fullScreenControls.videoBottomGradient || target === fullScreenControls.videoTopLayer || target === fullScreenControls.videoTopGradient) {
-      fullScreenControls.fullScreenClickHandler();
-    } else if (target === videoData.videoEl || target === videoData.videoWrapper) {
-      fullScreenControls.fullScreenClickHandler();
+    if (target === this.fullScreenControls.videoBottomGradient || target === this.fullScreenControls.videoTopLayer || target === this.fullScreenControls.videoTopGradient) {
+      this.fullScreenControls.fullScreenClickHandler();
+    } else if (target === this.videoData.videoEl || target === this.videoData.videoWrapper) {
+      this.fullScreenControls.fullScreenClickHandler();
     }
-  },
+  }
 
   ontimeupdateEvent(event) {
     let target = event.target;
-    timerInfo.updateTime();
-  },
+    this.timerInfo.updateTime();
+  }
 
   onprogressEvent(event) {
     let target = event.target;
-    progressBarControls.loadProgress();
-  },
+    this.progressBarControls.loadProgress();
+  }
 
   destroy() {
-    progressBarControls.destroy();
-    keyboardEvents.destroy();
-    customTracksControls.destroy();
+    //overrides
+    this.playPausebtnControls.pauseVideo();
 
-    videoData.videoEl = null;
-    videoData.wrapper = null;
+    this.progressBarControls.destroy();
+
+    this.keyboardEvents.destroy();
+
+    this.customTracksControls.destroy();
+
+    this.videoData.videoEl.removeAttribute('src');
+    this.videoData.videoEl.load();
+    this.videoData.wrapper = null;
   }
 }
 
-export default events;
+export default VplayerEvents;

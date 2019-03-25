@@ -1,0 +1,63 @@
+$animation-duration-base: 300ms;
+$animation-duration-slow: $animation-duration-base * 2;
+$animation-duration-fast: $animation-duration-base / 2;
+
+$animation-transition-cubic-bezier: cubic-bezier(0, 0, 0.2, 1);
+$animation-transition-layers: cubic-bezier(0.4, 0, 1, 1);
+
+
+// Colors
+$white: #fff;
+$black: #000;
+$gray-light: #eee;
+$text-shade-dark: rgba(8, 8, 8, 0.75);
+$plugin-blue: #0087e2;
+$background-color-overlay: rgba(0,0,0,0.85);
+
+$font-size-small: 11px;
+$font-size-title: 18px;
+
+$z-index-container: 10; // 10
+$z-index-video-layer: 11; //100000
+$z-index-gradient-top: 12; //23
+$z-index-top-layer: 13; //59
+$z-index-caption-window: 17; //37
+$z-index-gradient-bottom: 15; // 22
+$z-index-bottom-layer: 16; // 60
+$z-index-progress-bar: 19; //31
+$z-index-progress-bar-padding: 18; //28
+$z-index-progress-list: 25; //39
+$z-index-play-progress: 23; //34
+$z-index-load-progress: 22; //33
+$z-index-hover-progress: 24; //35
+$z-index-scrubber-container: 30; //43
+$z-index-scrubber-pull-indicator: 29; //42
+$z-index-tooltip-wrapper: 50; //1002
+$z-index-settings-menu: 40; //71
+$z-index-cards-btn: 31; //62
+$z-index-drawer: 18;// 30
+
+$z-index-modal: 900;
+$z-index-modal-overlay: 905;
+$z-index-modal-content: 950;
+$z-index-modal-close: 950;
+
+$z-index-container--modal: $z-index-modal-content + 10; // 10
+$z-index-video-layer--modal: $z-index-modal-content + 11; //100000
+$z-index-gradient-top--modal: $z-index-modal-content + 12; //23
+$z-index-top-layer--modal: $z-index-modal-content + 13; //59
+$z-index-caption-window--modal: $z-index-modal-content + 17; //37
+$z-index-gradient-bottom--modal: $z-index-modal-content + 15; // 22
+$z-index-bottom-layer--modal: $z-index-modal-content + 16; // 60
+$z-index-progress-bar--modal: $z-index-modal-content + 19; //31
+$z-index-progress-bar-padding--modal: $z-index-modal-content + 18; //28
+$z-index-progress-list--modal: $z-index-modal-content + 25; //39
+$z-index-play-progress--modal: $z-index-modal-content + 23; //34
+$z-index-load-progress--modal: $z-index-modal-content + 22; //33
+$z-index-hover-progress--modal: $z-index-modal-content + 24; //35
+$z-index-scrubber-container--modal: $z-index-modal-content + 30; //43
+$z-index-scrubber-pull-indicator--modal: $z-index-modal-content + 29; //42
+$z-index-tooltip-wrapper--modal: $z-index-modal-content + 50; //1002
+$z-index-settings-menu--modal: $z-index-modal-content + 40; //71
+$z-index-cards-btn--modal: $z-index-modal-content + 31; //62
+$z-index-drawer--modal: $z-index-modal-content +18; //30

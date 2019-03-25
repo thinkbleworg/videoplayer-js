@@ -271,7 +271,7 @@ function _buildPlayListCard(videoList, wrapperEl) {
       // Language is present
       // Find default Language
       video = item.lang.find((v) => {
-        if (v.default) {
+        if (v.playingState) {
           return v;
         }
       });
@@ -365,7 +365,7 @@ function _buildSettingsMenu(menuList, wrapperEl) {
 }
 
 function _buildSettingsMenuDropdownOptions(menu, wrapperEl, headerLabel, headerAttr) {
-  let headerHTML = `<div class="vplayer-panel-header" data-attr="${headerAttr}-options"><span class="vplayer-panel-title">${headerLabel}</span></div>`;
+  let headerHTML = `<div class="vplayer-panel-header" data-attr="${headerAttr}-options-header"><span class="vplayer-panel-title">${headerLabel}</span></div>`;
 
   wrapperEl.innerHTML = headerHTML + '<div class="vplayer-panel-menu" role="menu"></div>';
 
@@ -389,14 +389,20 @@ function _buildSettingsMenuDropdownOptions(menu, wrapperEl, headerLabel, headerA
   });
 }
 
-const ui = {
-  config: null,
+function randomId() {
+  return Math.ceil(Date.now() + Math.random() * 1000);
+}
 
-  init(rootEl, config) {
+class VplayerUI {
+  constructor(rootEl, config) {
     this.config = config;
     this.wrapper = null;
-    return this.createUI(rootEl, config);
-  },
+    this.rootEl = rootEl;
+  }
+
+  init() {
+    return this.createUI(this.rootEl, this.config);
+  }
 
   createUI(rootEl, config) {
     let docFrag = document.createDocumentFragment();
@@ -415,6 +421,8 @@ const ui = {
     }
 
     let wrapper = _createElements(wrapperElOpt);
+    wrapper.setAttribute("id", randomId());
+
     let container = _createElements({classNames: ['vplayer-container']}, wrapper);
 
     let { videoElOpt, tracks, videoList, titleObj } = _buildVideoElOptions(config);
@@ -444,19 +452,19 @@ const ui = {
     this.wrapper = wrapper;
 
     return wrapper;
-  },
+  }
 
   removeDOMElements(className, wrapperEl, removeAllMatching) {
     return _removeDOMElement(className, wrapperEl, removeAllMatching);
-  },
+  }
 
-  addVideoAttrs(videoObj, el) {
+  addVideoAttrs(videoObj, el, currentConfig) {
     let video = null;
     if (videoObj.hasOwnProperty('lang')) {
       // Language is present
       // Find default Language
       video = videoObj.lang.find((item) => {
-        if (item.default) {
+        if (item.playingState) {
           return item;
         }
       });
@@ -512,7 +520,7 @@ const ui = {
       let titleLinkElOpt = _buildTitleLayer(titleObj);
       let titleLink = _createElements(titleLinkElOpt, textTopLayer);
     }
-  },
+  }
 
   setPrevNextBtnStates(playlist) {
     let prevBtn = this.wrapper.querySelector('.vplayer-btn--prev');
@@ -546,15 +554,15 @@ const ui = {
         nextBtn.classList.add(className);
       });
     }
-  },
+  }
 
   buildPlayListCards(videoList, wrapper) {
     return _buildPlayListCard(videoList, wrapper);
-  },
+  }
 
   buildSettingsMenu(menuList, wrapper) {
     return _buildSettingsMenu(menuList, wrapper);
-  },
+  }
 
   buildSettingsMenuOptions(menuList, wrapper, headerLabel, headerAttr) {
     return _buildSettingsMenuDropdownOptions(menuList, wrapper, headerLabel, headerAttr);
@@ -562,4 +570,4 @@ const ui = {
 
 };
 
-export default ui;
+export default VplayerUI;

@@ -1,41 +1,5 @@
-$animation-duration-base: 300ms;
-$animation-duration-slow: $animation-duration-base * 2;
-$animation-duration-fast: $animation-duration-base / 2;
-
-$animation-transition-cubic-bezier: cubic-bezier(0, 0, 0.2, 1);
-$animation-transition-layers: cubic-bezier(0.4, 0, 1, 1);
-
-
-// Colors
-$white: #fff;
-$black: #000;
-$gray-light: #eee;
-$text-shade-dark: rgba(8, 8, 8, 0.75);
-$plugin-blue: #0087e2;
-
-$font-size-small: 11px;
-$font-size-title: 18px;
-
-$z-index-container: 10; // 10
-$z-index-video-layer: 11; //100000
-$z-index-gradient-top: 12; //23
-$z-index-top-layer: 13; //59
-$z-index-caption-window: 17; //37
-$z-index-gradient-bottom: 15; // 22
-$z-index-bottom-layer: 16; // 60
-$z-index-progress-bar: 19; //31
-$z-index-progress-bar-padding: 18; //28
-$z-index-progress-list: 25; //39
-$z-index-play-progress: 23; //34
-$z-index-load-progress: 22; //33
-$z-index-hover-progress: 24; //35
-$z-index-scrubber-container: 30; //43
-$z-index-scrubber-pull-indicator: 29; //42
-$z-index-tooltip-wrapper: 50; //1002
-$z-index-settings-menu: 40; //71
-$z-index-cards-btn: 31; //62
-
-
+@import 'variables';
+@import 'modal';
 
 .vplayer {
   &-wrapper {
@@ -925,7 +889,7 @@ $z-index-cards-btn: 31; //62
     top: 0;
     bottom: 0;
     right: 0;
-    z-index: 30;
+    z-index: $z-index-drawer;
     width: 177px;
     background-color: rgba(0,0,0,.2);
     color: $white;
@@ -1351,6 +1315,11 @@ $z-index-cards-btn: 31; //62
     z-index: $z-index-settings-menu;
     will-change: width,height;
 
+    &--restrict {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
     &[aria-hidden=true] {
       display: none;
     }
@@ -1432,6 +1401,7 @@ $z-index-cards-btn: 31; //62
       bottom: 0;
       width: auto !important;
       height: auto !important;
+      z-index: 1000;
 
       .caption {
         &-window {
@@ -1708,6 +1678,102 @@ $z-index-cards-btn: 31; //62
   }
 }
 
+
+.vplayer-modal {
+  .vplayer-container {
+    z-index: $z-index-container--modal;
+  }
+
+  .vplayer-stream {
+    z-index: $z-index-video-layer--modal;
+  }
+
+  .vplayer-gradient-top {
+    z-index: $z-index-gradient-top--modal;
+  }
+
+  .vplayer-gradient-bottom {
+    z-index: $z-index-gradient-bottom--modal;
+  }
+
+  .vplayer-top-layer {
+    z-index: $z-index-top-layer--modal;
+  }
+
+  .vplayer-bottom-layer {
+    z-index: $z-index-bottom-layer--modal;
+
+    .vplayer-progress-list {
+      z-index: $z-index-progress-list--modal;
+    }
+
+    .vplayer-progress-bar {
+      z-index: $z-index-progress-bar--modal;
+    }
+
+    .vplayer-progress-bar-padding {
+      z-index: $z-index-progress-bar-padding--modal;
+    }
+
+    .vplayer-play-progress {
+      z-index: $z-index-play-progress--modal;
+    }
+
+    .vplayer-load-progress {
+      z-index: $z-index-load-progress--modal;
+    }
+
+    .vplayer-hover-progress {
+      z-index: $z-index-hover-progress--modal;
+    }
+
+    .vplayer-scrubber-container {
+      z-index: $z-index-scrubber-container--modal;
+    }
+
+    .vplayer-scrubber-pull-indicator {
+      z-index: $z-index-scrubber-pull-indicator--modal;
+    }
+  }
+
+  .vplayer-btn--cards {
+    z-index: $z-index-cards-btn--modal;
+  }
+
+  .vplayer-tooltip-wrapper {
+    z-index: $z-index-tooltip-wrapper--modal;
+  }
+
+  .vplayer-drawer {
+    z-index: $z-index-drawer--modal;
+  }
+
+  .vplayer-settings-menu {
+    z-index: $z-index-settings-menu--modal;
+  }
+
+  .vplayer-wrapper .caption-window {
+    z-index: $z-index-caption-window--modal;
+  }
+}
+
+
+@media (max-width: 520px) {
+  .vplayer {
+    &-container {
+      min-width: 475px;
+    }
+  }
+}
+
+@media (max-width: 767px) {
+  .vplayer {
+    &-settings-menu {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+  }
+}
 
 @keyframes vplayer-fullscreen-button-corner-0-animation {
   50% {

@@ -1,6 +1,6 @@
 import configObject from './vplayer-config';
-import ui from './vplayer-ui';
-import events from './vplayer-events';
+import VplayerUI from './vplayer-ui';
+import VplayerEvents from './vplayer-events';
 
 class Vplayer {
   constructor(el, options) {
@@ -8,7 +8,7 @@ class Vplayer {
     this.rootElem = el;
     this.config = Object.assign(configObject.Config, options);
     this.config.settings = configObject.Settings;
-    
+
     this.videoList = this.config.src;
     // Set the videolist item to not-playing initially
     this.videoList.forEach((item) => { item.state = 'not-playing'; });
@@ -21,21 +21,23 @@ class Vplayer {
     // Construct the UI if no custom ui
     if (!this.config.customUI) {
       // Construct the UI
-      let wrapper = ui.init(this.rootElem, this.config);
+      this.ui = new VplayerUI(this.rootElem, this.config);
+
+      let wrapper = this.ui.init();
       let videoEl = wrapper.querySelector('.vplayer-stream');
       let config = this.config;
       let currentVideo = this.currentVideo;
       let videoList = this.videoList;
+      let ui = this.ui;
 
-      let eventsObj = { wrapper, videoEl, config, currentVideo, videoList };
-
-      events.init(eventsObj);
+      let eventParams = { ui, wrapper, videoEl, config, currentVideo, videoList };
+      this.eventInstance = new VplayerEvents(eventParams);
+      this.eventInstance.init();
     }
   }
 
   destroy() {
-    events.destroy();
-
+    this.eventInstance.destroy();
     this.videoList = null;
     this.currentVideo = null;
 
