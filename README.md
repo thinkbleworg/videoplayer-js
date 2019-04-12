@@ -15,3 +15,5 @@ HTML5 Video Player by using vanilla javascript supported with playlist, captions
 * Failed to execute 'start' on 'TimeRanges': The index provided (2) is greater than or equal to the maximum bound (2).
 * bookmarks
 * Add Timeline Preview
+* language optimization when switching to no language format
+* full screen modification

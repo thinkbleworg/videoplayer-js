@@ -267,6 +267,7 @@ function _buildPlayListCard(videoList, wrapperEl) {
     let videoCardEl = _createElements(videoCardElOpt, wrapperEl);
 
     let video = null;
+    let videoParentId = null;
     if (item.hasOwnProperty('lang')) {
       // Language is present
       // Find default Language
@@ -279,11 +280,14 @@ function _buildPlayListCard(videoList, wrapperEl) {
       video = item;
     }
 
+    videoParentId = item.id;
+
     let cardLinkElOpt = {
       tagName: 'a',
       classNames: ['vplayer-card-click'],
       attrs: {
-        'data-video-id': video.id
+        'data-video-id': video.id,
+        'data-video-parent-id': videoParentId
       }
     };
     let cardLinkEl = _createElements(cardLinkElOpt, videoCardEl);

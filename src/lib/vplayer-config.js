@@ -6,6 +6,7 @@ const Config = {
   enableCaptions: false,
   customUI: false,
   src: [],
+  volume: '50',
   speed: 1.0,
   isModal: false,
   modalClass: '',

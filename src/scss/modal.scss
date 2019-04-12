@@ -96,5 +96,13 @@
     .vplayer-modal-content-box {
       width: 100%;
     }
+
+    .vplayer-wrapper:not(.fs-mode) {
+      min-width: 475px;
+
+      .vplayer-container {
+        min-width: 100%;
+      }
+    }  
   }
 }

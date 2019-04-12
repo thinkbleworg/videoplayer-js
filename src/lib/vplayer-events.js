@@ -197,7 +197,6 @@ const prevNextbtnControls = {
 }
 
 const fullScreenControls = {
-  isVideoFullScreen: false,
   fullScreenBtn: null,
   videoBottomGradient: null,
   videoTopLayer: null,
@@ -216,7 +215,11 @@ const fullScreenControls = {
    * @return {function} Return Calls the toggleFullScreen fn with the param as bool
    */
   fullScreenClickHandler() {
-    return this.isVideoFullScreen ? this.toggleFullScreen(false) : this.toggleFullScreen(true);
+    return this.isVideoFullScreen() ? this.toggleFullScreen(false) : this.toggleFullScreen(true);
+  },
+
+  isVideoFullScreen() {
+    return !!(document.fullScreen || document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement || document.fullscreenElement);
   },
 
   /**
@@ -226,13 +229,27 @@ const fullScreenControls = {
    * @param  {bool} fullscreen - sets the isVideoFullScreen
    */
   toggleFullScreen(fullScreen) {
-    this.isVideoFullScreen = fullScreen;
+    if (fullScreen) {
+      this.toggleFullScreenWrapperClass(true);
+      if (this.videoData.wrapper.requestFullScreen) this.videoData.wrapper.requestFullScreen();
+    	else if (this.videoData.wrapper.webkitRequestFullScreen) this.videoData.wrapper.webkitRequestFullScreen();
+    	else if (this.videoData.wrapper.mozRequestFullScreen) this.videoData.wrapper.mozRequestFullScreen();
+    } else {
+      this.toggleFullScreenWrapperClass(false);
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+      else if (document.webkitCancelFullScreen) document.webkitCancelFullScreen();
+      else if (document.msExitFullscreen) document.msExitFullscreen();
+    }
+  },
+
+  toggleFullScreenWrapperClass(isFullScreen) {
     let videoModalElem = null;
     if (this.videoData.config.isModal) {
       videoModalElem = document.querySelector(`.${this.videoData.config.modalClass}`);
     }
 
-    if (fullScreen) {
+    if (isFullScreen) {
       this.videoData.wrapper.classList.add('fs-mode');
       if (this.videoData.config.isModal) {
         videoModalElem.classList.add('vplayer-modal--fs-mode');
@@ -243,16 +260,7 @@ const fullScreenControls = {
         videoModalElem.classList.remove('vplayer-modal--fs-mode');
       }
     }
-
-    // if (this.videoData.videoEl.requestFullScreen) {
-  	// 	this.videoData.videoEl.requestFullScreen();
-  	// } else if (this.videoData.videoEl.webkitRequestFullScreen) {
-  	// 	this.videoData.videoEl.webkitRequestFullScreen();
-  	// } else if (this.videoData.videoEl.mozRequestFullScreen) {
-  	// 	this.videoData.videoEl.mozRequestFullScreen();
-  	// }
-
-    this.fullScreenBtnHandler(fullScreen);
+    this.fullScreenBtnHandler(isFullScreen);
   },
 
   /**
@@ -384,7 +392,6 @@ const volumeControls = {
     this.volumeBtn = this.videoData.wrapper.querySelector('.vplayer-btn--volume').parentNode;
     this.controlsElem = this.videoData.wrapper.querySelector('.vplayer-controls');
     this.volumePanel = this.videoData.wrapper.querySelector('.vplayer-volume-panel');
-
     this.initializeVolumeSlider();
   },
 
@@ -430,21 +437,18 @@ const volumeControls = {
         sliderRangeInput = sliderPanel.querySelector('#volumeRangeSlider'),
         slider = sliderPanel.querySelector('.vplayer-volume-slider')
 
-    if (slider !== null) {
-      slider.parentNode.removeChild(slider);
+    if (slider === null) {
+      rangejs(sliderRangeInput, {
+        css: true,
+        rangeClass: 'vplayer-volume-slider',
+        rangeTag: 'div',
+        draggerClass: 'vplayer-volume-slider-handle',
+        draggerTag: 'div',
+        isAriaEnabled: true,
+        wrapper: sliderPanel,
+        callbackFn: (volume) => { this.setVolume(volume); }
+      });
     }
-
-    rangejs(sliderRangeInput, {
-      css: true,
-      rangeClass: 'vplayer-volume-slider',
-      rangeTag: 'div',
-      draggerClass: 'vplayer-volume-slider-handle',
-      draggerTag: 'div',
-      isAriaEnabled: true,
-      wrapper: sliderPanel,
-      callbackFn: (volume) => { this.setVolume(volume); }
-    });
-
   },
 
   /**
@@ -715,6 +719,9 @@ const settingsControls = {
       modifiedSettings = modifiedSettings.filter(i => i.label !== 'lang');
       modifiedSettings.push(languages);
     }
+    //  else {
+    //   modifiedSettings = modifiedSettings.filter(i => i.label !== 'lang');
+    // }
     this.videoData.config.settings = modifiedSettings;
     this.settingsObj = modifiedSettings;
     return this.settingsObj;
@@ -793,6 +800,11 @@ const settingsControls = {
     } else {
       attr = '';
     }
+
+    if (currentTarget.getAttribute('aria-disabled')) {
+      return;
+    }
+
     switch (attr) {
       case 'autoplay':
         this.checkboxToggle(currentTarget, attr);
@@ -1068,8 +1080,19 @@ const playListControls = {
     }
   },
 
-  directPlayVideo(videoId) {
-    let videoToBePlayed = this.videoData.videoList.find((item) => { return item.id === videoId; });
+  directPlayVideo(obj) {
+    let { videoParentId, videoId } = obj;
+    let videoToBePlayed = null;
+    if (videoParentId) {
+      let parentObj = this.videoData.videoList.find((item) => { return item.id === videoParentId; });
+      if (parentObj.hasOwnProperty('lang')) {
+        videoToBePlayed = parentObj.lang.find((item) => { return item.id === videoId; });
+      } else {
+        videoToBePlayed = parentObj;
+      }
+    } else {
+      videoToBePlayed = this.videoData.videoList.find((item) => { return item.id === videoId; });
+    }
     setNonPlayingState(this.videoData);
     this.videoData.currentVideo = videoToBePlayed;
     this.videoData.currentVideo.state = 'playing';
@@ -1083,8 +1106,9 @@ const playListControls = {
       card.addEventListener('click', card.cardClickEvent = (e) => {
         let currentTarget = e.currentTarget;
         let videoId = currentTarget.getAttribute('data-video-id');
-        console.log('card event videoId', videoId);
-        this.directPlayVideo(videoId);
+        let videoParentId = currentTarget.getAttribute('data-video-parent-id');
+        console.log('card event videoId', videoId, 'parent id', videoParentId);
+        this.directPlayVideo({ videoParentId, videoId });
       }, true);
     });
   },
@@ -1099,10 +1123,6 @@ const playListControls = {
 };
 
 const speedControls = {
-  // init() {
-  //
-  // },
-
   trigger(speed) {
     this.videoData.videoEl.playbackRate = speed;
   }
@@ -1285,6 +1305,9 @@ class VplayerEvents {
 
     let wrapperEvents = ['click', 'mouseover', 'mouseout', 'dblclick'];
     wrapperEvents.forEach(evt => this.videoData.wrapper.addEventListener(evt, this, false));
+
+    let documentEvents = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'msfullscreenchange'];
+    documentEvents.forEach(evt => document.addEventListener(evt, this, false));
   }
 
   handleEvent(evt) {
@@ -1301,6 +1324,7 @@ class VplayerEvents {
       console.log('onloadeddataEvent video ready');
       this.initControlsWithRef();
       this.initControls();
+      this.volumeControls.setVolume(parseInt(this.videoData.config.volume));
     }
   }
 
@@ -1439,7 +1463,25 @@ class VplayerEvents {
 
   onprogressEvent(event) {
     let target = event.target;
-    this.progressBarControls.loadProgress();
+    if (this.videoData.videoEl.readyState === 4) {
+      this.progressBarControls.loadProgress();
+    }
+  }
+
+  onfullscreenchangeEvent(event) {
+    this.fullScreenControls.toggleFullScreenWrapperClass((document.fullScreen || document.fullscreenElement));
+  }
+
+  onwebkitfullscreenchangeEvent(event) {
+    this.fullScreenControls.toggleFullScreenWrapperClass(document.webkitIsFullScreen);
+  }
+
+  onmozfullscreenchangeEvent(event) {
+    this.fullScreenControls.toggleFullScreenWrapperClass(document.mozFullScreen);
+  }
+
+  onmsfullscreenchangeEvent(event) {
+    this.fullScreenControls.toggleFullScreenWrapperClass(document.msFullscreenElement);
   }
 
   destroy() {
